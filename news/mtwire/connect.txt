@@ -1,0 +1,10 @@
+GCP server connection
+user: agruduser
+host: 34.69.145.125
+pem key: mtwireagrudserver.pem
+
+DB connection
+34.69.145.125
+rentechuser
+Agdj8ekee9u04IIid
+rentech_db
