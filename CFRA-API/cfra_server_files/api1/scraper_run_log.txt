@@ -1,0 +1,24 @@
+INFO:root:----------------------2021-12-16 12:37:53.439744----------------------------
+INFO:root:access token accquired
+WARNING:urllib3.connectionpool:Connection pool is full, discarding connection: api.cfraresearch.com
+WARNING:urllib3.connectionpool:Connection pool is full, discarding connection: api.cfraresearch.com
+WARNING:urllib3.connectionpool:Connection pool is full, discarding connection: api.cfraresearch.com
+WARNING:urllib3.connectionpool:Connection pool is full, discarding connection: api.cfraresearch.com
+WARNING:urllib3.connectionpool:Connection pool is full, discarding connection: api.cfraresearch.com
+INFO:root:data found for 1295 tickers
+INFO:root:resultset created successfully
+INFO:root:67410 rows inserted.
+INFO:root:MySQL connection is closed
+INFO:root:----------------------2021-12-16 12:43:36.167488----------------------------
+INFO:root:----------------------2021-12-16 12:44:34.855671----------------------------
+INFO:root:access token accquired
+WARNING:urllib3.connectionpool:Connection pool is full, discarding connection: api.cfraresearch.com
+WARNING:urllib3.connectionpool:Connection pool is full, discarding connection: api.cfraresearch.com
+WARNING:urllib3.connectionpool:Connection pool is full, discarding connection: api.cfraresearch.com
+WARNING:urllib3.connectionpool:Connection pool is full, discarding connection: api.cfraresearch.com
+WARNING:urllib3.connectionpool:Connection pool is full, discarding connection: api.cfraresearch.com
+INFO:root:data found for 1316 tickers
+INFO:root:resultset created successfully
+INFO:root:68102 rows inserted.
+INFO:root:MySQL connection is closed
+INFO:root:----------------------2021-12-16 12:50:01.626434----------------------------
