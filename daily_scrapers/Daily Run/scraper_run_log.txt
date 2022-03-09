@@ -1,0 +1,27 @@
+INFO:root:----------------started at:2022-02-28 18:43:42.828803--------------------
+INFO:root:{"source_id": ["COINETH:SS"], "master_id": [84949]}
+INFO:WDM:
+
+INFO:WDM:====== WebDriver manager ======
+INFO:WDM:Current google-chrome version is 98.0.4758
+INFO:WDM:Get LATEST chromedriver version for 98.0.4758 google-chrome
+INFO:WDM:Driver [C:\Users\011\.wdm\drivers\chromedriver\win32\98.0.4758.102\chromedriver.exe] found in cache
+INFO:root:----------------started at:2022-02-28 18:54:53.580994--------------------
+INFO:root:{"source_id": ["COINETH:SS"], "master_id": [84949]}
+INFO:WDM:
+
+INFO:WDM:====== WebDriver manager ======
+INFO:WDM:Current google-chrome version is 98.0.4758
+INFO:WDM:Get LATEST chromedriver version for 98.0.4758 google-chrome
+INFO:WDM:Driver [C:\Users\011\.wdm\drivers\chromedriver\win32\98.0.4758.102\chromedriver.exe] found in cache
+INFO:root:----------------started at:2022-02-28 18:57:41.142459--------------------
+INFO:root:{"source_id": ["COINETH:SS"], "master_id": [84949]}
+INFO:root:----------------started at:2022-02-28 18:58:54.790291--------------------
+INFO:root:{"source_id": ["COINETH:SS"], "master_id": [84949]}
+INFO:root:{"source_id": ["COINXBT:SS"], "master_id": [84950]}
+INFO:root:----------------started at:2022-02-28 19:00:15.313414--------------------
+INFO:root:{"source_id": ["COINETH:SS"], "master_id": [84949]}
+INFO:root:{"source_id": ["COINXBT:SS"], "master_id": [84950]}
+INFO:root:{"source_id": ["BTCE:GR"], "master_id": [86831]}
+INFO:root:----------------started at:2022-02-28 19:02:20.283139--------------------
+INFO:root:{"source_id": ["COINETH:SS"], "master_id": [84949]}

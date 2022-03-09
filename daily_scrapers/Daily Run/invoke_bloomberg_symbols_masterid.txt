@@ -1,0 +1,2 @@
+# source_id = ["COINETH:SS", "COINXBT:SS","BTCE:GR", "3072:HK", "COINXBE:SS", "CYB:SP"]
+# master_id = ["84949", "84950", "86831", "86835", "86833", "86719"]
