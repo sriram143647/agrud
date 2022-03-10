@@ -3,6 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.service import Service
+from sqlalchemy import true
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import TimeoutException
 from datetime import datetime
@@ -83,6 +84,8 @@ def fundsingapore_scraper(driver,isin,master_id):
     except TimeoutException:
         row = [master_id,isin,nav_price,nav_date]
         write_output(row)
+        end_tm = datetime.now()
+        print(f'Time taken to run isin {isin} is {end_tm-start_tm}')
         return 0
     except:
         pass
@@ -91,44 +94,38 @@ def fundsingapore_scraper(driver,isin,master_id):
         try:
             WebDriverWait(driver,3).until(EC.visibility_of_element_located((By.XPATH,'//*[@class="FundDetailHeader_fdHeader__head__2_9Cn"]/hgroup/h1')))
             break
-        except:
-            continue
+        except Exception as e:
+            # try:
+            #     WebDriverWait(driver,3).until(EC.visibility_of_element_located((By.XPATH,'//*[@class="SearchInput_searchInput__y_s8m"]/section/input')))
+            #     row = [master_id,isin,nav_price,nav_date]
+            #     write_output(row)
+            #     end_tm = datetime.now()
+            #     print(f'Time taken to run isin {isin} is {end_tm-start_tm}')
+            #     return 0
+            # except:
+                continue
         
-    last_height = driver.execute_script("return document.body.scrollHeight")
-    while True:
-        # Scroll down to bottom
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        
-        # Calculate new scroll height and compare with last scroll height
-        new_height = driver.execute_script("return document.body.scrollHeight")
-        if new_height == last_height:
-            break
-        last_height = new_height
-
     time.sleep(5)
     soup = BeautifulSoup(driver.page_source,'html5lib')
     try:
-        links = soup.find('section',{'class':'FundDocuments_fundDocuments__3tpgn'}).find_all('a')
-        for link in links:
-            if 'prospectus' in  link.get('title').lower(): 
-                if prospectus_link == '':
-                    try:
-                        prospectus_link = soup.find('section',{'class':'FundDocuments_fundDocuments__3tpgn'}).find('a',{'title':'Prospectus'}).get('href')
-                    except:
-                        prospectus_link = ''
-
-            if 'factsheet' in link.get('title').lower():
-                if factsheet_link == '':
-                    try:
-                        factsheet_link = soup.find('section',{'class':'FundDocuments_fundDocuments__3tpgn'}).find('a',{'title':'Factsheet'}).get('href')
-                    except:
-                        factsheet_link = ''
-
-            if factsheet_link != '' and prospectus_link != '':
-                row = [master_id,isin,factsheet_link,prospectus_link]
-                write_output(row)
-                driver.quit()
-                return 0
+        data_list  = list(soup.find('div',{'class':'FundDetailHeader_fdHeader__nav__2dniz'}).stripped_strings)
+        for data in data_list:
+            try:
+                date = data.replace('):','').replace('(','').replace('As of ','').strip()
+                if datetime.strftime(datetime.strptime(date,'%d %b %Y'),'%Y-%m-%d'):
+                    nav_date = datetime.strftime(datetime.strptime(date,'%d %b %Y'),'%Y-%m-%d')
+            except:
+                pass
+            
+            try:
+                nav_price = float(data)
+            except:
+                pass
+    except:
+        pass
+    
+    try:
+        driver.back()
     except:
         pass
     row = [master_id,isin,nav_price,nav_date]
