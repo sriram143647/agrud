@@ -1,17 +1,51 @@
 import markets_ft.markets_ft_com_scraper as market
-import fundsquare.fundsquare_net_scraper  as fundsquare
+import fundsquare.fundsquare_net_scraper as fundsquare
 import fundinfo.fundinfo_private_investor_scraper as priv_fundinfo
 import fundinfo.fundinfo_professional_investor_scraper as prof_fundinfo
 import sg_morningstar.sg_morningstar_scraper_sel as morningstar
-import multiprocessing
 import pandas as pd
-import logging as log
-file_path = r'D:\\sriram\\agrud\\NAV_scraping\\'
+from datetime import datetime
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import smtplib,ssl
+import multiprocessing
+import time
+import os
+
+# server_file_path = '/home/ubuntu/rentech/nav_scraping/'
+local_file_path = r'D:\\sriram\\agrud\\NAV_scraping\\'
+file_path = local_file_path
 data_file = file_path+'MF List - Final.csv'
 output_file = file_path+file_path.split('\\\\')[-2]+'_data.csv'
-log_file_path = r'D:\\sriram\\agrud\\NAV_scraping\\scraper_run_log.txt'
-log.basicConfig(filename = log_file_path,filemode='a',level=log.INFO)
-my_log = log.getLogger()
+non_scraped_isin_file = file_path+file_path.split('\\\\')[-2]+'_non_scraped_data.csv'
+
+def send_email(row_count=0,status=None,err_text=None):
+    sender_email = 'agrud.scrapersmail123@gmail.com'
+    email_password = 'qwerty@123'
+    receivers_email_list = ["prince.chaturvedi@agrud.com","sayan.sinharoy@agrud.com"]
+    subject = f"Nav Scraping data ingestion: {datetime.today().strftime('%Y-%m-%d %H:%M:%S')}"
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = ','.join(receivers_email_list)
+    msg['Subject'] = subject
+    body = f"Total records inserted: {row_count}\ncronjob status: {status}\nError:{err_text}"
+    msg.attach(MIMEText(body,'plain'))
+    attach_file_name = non_scraped_isin_file
+    with open(attach_file_name,'rb') as send_file:
+        payload = MIMEBase('application', 'octate-stream')
+        payload.set_payload(send_file.read())
+    encoders.encode_base64(payload) 
+    payload.add_header('Content-Decomposition',f'attachment; filename={attach_file_name}')
+    msg.attach(payload)
+    text = msg.as_string()
+    context = ssl.create_default_context()
+    server = smtplib.SMTP('smtp.gmail.com',587)
+    server.starttls(context=context)
+    server.login(sender_email,email_password)
+    server.sendmail(sender_email,receivers_email_list,text)
+    server.quit()
 
 def db_insert(df):
     import mysql.connector
@@ -28,6 +62,7 @@ def db_insert(df):
         rows = cursor.rowcount
         print(f'{rows} rows inserted')
         db_conn.commit()
+        send_email(row_count=rows,status='success')
     except Exception as e:
         print(f'Exception: {e}')
     finally:
@@ -40,56 +75,79 @@ def task1():
     # market_ft scraper
     market.output_file = output_file
     market.data_file = data_file
-    market.log_file_path = log_file_path
+    market.non_scraped_isin_file = non_scraped_isin_file
     market.start_markets_ft_scraper()
-    
+
     # fundsquare scraper
     fundsquare.output_file = output_file
     fundsquare.data_file = data_file
-    fundsquare.log_file_path = log_file_path
+    market.non_scraped_isin_file = non_scraped_isin_file
     fundsquare.start_fundsquare_scraper()
-    
+
     # priv_fundinfo scraper
     priv_fundinfo.output_file = output_file
     priv_fundinfo.data_file = data_file
-    priv_fundinfo.log_file_path = log_file_path
+    priv_fundinfo.non_scraped_isin_file = non_scraped_isin_file
     priv_fundinfo.start_fundinfo_priv_scraper(case=1)
-    
+
     # prof_fundinfo scraper
     prof_fundinfo.output_file = output_file
     prof_fundinfo.data_file = data_file
-    prof_fundinfo.log_file_path = log_file_path
+    prof_fundinfo.non_scraped_isin_file = non_scraped_isin_file
     prof_fundinfo.start_fundinfo_prof_scraper(case=1)
 
 def task2():
     # priv_fundinfo scraper
     priv_fundinfo.output_file = output_file
     priv_fundinfo.data_file = data_file
-    priv_fundinfo.log_file_path = log_file_path
+    priv_fundinfo.non_scraped_isin_file = non_scraped_isin_file
     priv_fundinfo.start_fundinfo_priv_scraper(case=2)
-    
+
     # prof_fundinfo scraper
     prof_fundinfo.output_file = output_file
     prof_fundinfo.data_file = data_file
-    prof_fundinfo.log_file_path = log_file_path
+    prof_fundinfo.non_scraped_isin_file = non_scraped_isin_file
     prof_fundinfo.start_fundinfo_prof_scraper(case=2)
-    
+
     # morningstar scraper
     morningstar.output_file = output_file
     morningstar.data_file = data_file
-    morningstar.log_file_path = log_file_path
+    morningstar.non_scraped_isin_file = non_scraped_isin_file
     morningstar.start_sg_morningstar_scraper()
 
-if __name__ == '__main__':
+def start():
+    # files deletion
+    try:
+        os.remove(output_file)
+    except:
+        pass
+    try:
+        os.remove(non_scraped_isin_file)
+    except:
+        pass
+
+    # process 1
     p1 = multiprocessing.Process(target=task1)
     p1.start()
 
+    # process 2
     p2 = multiprocessing.Process(target=task2)
     p2.start()
 
+    # process join
     p1.join()
     p2.join()
+    
+    # drop duplicate isin
+    time.sleep(10)
+    df = pd.read_csv(non_scraped_isin_file,encoding='utf-8')
+    df = df.drop_duplicates()
+    df.to_csv(non_scraped_isin_file,encoding='utf-8',index=False)
+    time.sleep(5)
+
     # db insertion
     df = pd.read_csv(output_file,encoding='utf-8')
     db_insert(df)
-    
+
+if __name__ == '__main__':
+    start()

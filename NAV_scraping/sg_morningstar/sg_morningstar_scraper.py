@@ -125,7 +125,7 @@ def morningstar_gen_case(isin, master_id):
     except:
         pass
     if nav_price != '' and nav_date != '':
-        my_log.info(f'isin {isin} scraped')
+        my_log.info(f'isin {isin} scraped sg_morningstar')
         row = [master_id,isin,nav_price,nav_date]
         write_output(row)
         return 0

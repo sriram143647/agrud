@@ -16,7 +16,9 @@ output_file = f"{domain}_data.csv"
 for file in os.listdir():
     if 'MF List' in file and '.csv' in file:
         data_file = os.getcwd()+'\\'+file
-        break  
+        break
+non_scraped_isin_file = f"{domain}_non_scraped_data.csv"
+   
 
 def db_insert(df):
     import mysql.connector
@@ -125,11 +127,13 @@ def morningstar_gen_case(driver,isin, master_id):
     except:
         pass
     if nav_price != '' and nav_date != '':
-        print(f'isin {isin} scraped')
         row = [master_id,isin,nav_price,nav_date]
         write_output(row)
         return 0
     else:
+        f = open(non_scraped_isin_file, 'a')
+        f.write(f'{isin}\n')
+        f.close()
         return 0
 
 def isin_downloaded():

@@ -10,17 +10,13 @@ import pandas as pd
 import requests
 import os
 session = requests.session()
+domain = os.getcwd().split('\\')[-1].replace(' ','_')
+output_file = f"{domain}_data.csv"
+non_scraped_isin_file = f"{domain}_non_scraped_data.csv"
 for file in os.listdir():
     if 'MF List - Final' in file and '.csv' in file:
         data_file = os.getcwd()+'\\'+file
         break  
-domain = os.getcwd().split('\\')[-1].replace(' ','_')
-output_file = f"{domain}_data.csv"
-import logging as log
-log_file_path = r'D:\\sriram\\agrud\\NAV_scraping\\scraper_run_log.txt'
-log.basicConfig(filename = log_file_path,filemode='a',level=log.INFO)
-my_log = log.getLogger()  
-
 
 def get_driver():
     s=Service(ChromeDriverManager().install())
@@ -63,15 +59,15 @@ def db_insert(df):
         data_type = VALUES(data_type), ts_date = VALUES(ts_date) ,ts_hour = VALUES(ts_hour), job_id = VALUES(job_id), batch_id = VALUES(batch_id);"""
         cursor.executemany(sql, result)
         rows = cursor.rowcount
-        my_log.info(f'{rows} rows inserted')
+        print(f'{rows} rows inserted')
         db_conn.commit()
     except Exception as e:
-        my_log.info(f'Exception: {e}')
+        print(f'Exception: {e}')
     finally:
         if (db_conn.is_connected()):
             cursor.close()
             db_conn.close()
-            my_log.info('Connection closed')
+            print('Connection closed')
 
 def write_header():
     with open(output_file,"a",newline="") as file:
@@ -130,11 +126,13 @@ def markets_ft_scraper(header,isin,master_id,curr):
     except:
         pass    
     if nav_price != '' and nav_date != '':
-        my_log.info(f'isin {isin} scraped')
         row = [master_id,isin,nav_price,nav_date]
         write_output(row)
         return 0
     else:
+        f = open(non_scraped_isin_file, 'a')
+        f.write(f'{isin}\n')
+        f.close()
         return 0
 
 def isin_downloaded():
@@ -152,6 +150,7 @@ def start_markets_ft_scraper():
     downloaded_isin = isin_downloaded()
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['Master ID'])
+    df = df[df['Currency'].notna()]
     for i,row in df.iterrows():
         isin = row[0]
         curr = row[1]
