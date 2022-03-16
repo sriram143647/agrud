@@ -53,13 +53,11 @@ def write_output(data):
         writer.writerow(data)
 
 def get_driver():
-    s=Service(ChromeDriverManager().install())
     options = webdriver.ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
     # options.add_argument("--incognito")
     options.add_argument('--headless')
-    driver = webdriver.Chrome(service=s,options=options)
-    # driver.minimize_window()
+    driver = webdriver.Chrome(ChromeDriverManager().install(),options=options)
     return driver
 
 def csv_filter():
@@ -67,7 +65,7 @@ def csv_filter():
     unique_isin = []
     cols = ['master id','isin name','price','date']
     try:
-        df = pd.read_csv(output_file)
+        df = pd.read_csv(output_file,encoding='utf-8')
     except FileNotFoundError:
         write_header()
         return 0
@@ -78,7 +76,7 @@ def csv_filter():
                     unique_isin.append(isin)
                     filtered_df = filtered_df.append(pd.DataFrame([row],columns=cols),ignore_index=True)
     try:
-        filtered_df.to_csv(output_file,columns=cols,index=False)
+        filtered_df.to_csv(output_file,encoding='utf-8',columns=cols,index=False)
         return filtered_df
     except:
         pass

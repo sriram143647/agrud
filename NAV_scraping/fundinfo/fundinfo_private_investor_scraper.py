@@ -20,13 +20,11 @@ for file in os.listdir():
 
 
 def get_driver():
-    s=Service(ChromeDriverManager().install())
     options = webdriver.ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
     # options.add_argument("--incognito")
     options.add_argument('--headless')
-    driver = webdriver.Chrome(service=s,options=options)
-    # driver.minimize_window()
+    driver = webdriver.Chrome(ChromeDriverManager().install(),options=options)
     return driver
 
 def getCookie(url):
@@ -86,7 +84,7 @@ def csv_filter():
     unique_isin = []
     cols = ['master id','isin name','price','date']
     try:
-        df = pd.read_csv(f"{domain}_data.csv")
+        df = pd.read_csv(output_file,encoding='utf-8')
     except FileNotFoundError:
         write_header()
         return 0
@@ -97,7 +95,7 @@ def csv_filter():
                     unique_isin.append(isin)
                     filtered_df = filtered_df.append(pd.DataFrame([row],columns=cols),ignore_index=True)
     try:
-        filtered_df.to_csv(f"{domain}_data.csv",columns=cols,index=False)
+        filtered_df.to_csv(output_file,encoding='utf-8',columns=cols,index=False)
         return filtered_df
     except:
         pass
@@ -136,7 +134,7 @@ def priv_investor_scraper(header,isin,master_id):
 
 def isin_downloaded():
     isin_downloaded = []
-    with open(f"{domain}_data.csv","r") as file:
+    with open(output_file,"r") as file:
         csvreader = csv.reader(file)
         header = next(csvreader)
         for row in csvreader:

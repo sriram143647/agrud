@@ -15,11 +15,11 @@ import time
 import os
 
 # server_file_path = '/home/ubuntu/rentech/nav_scraping/'
-local_file_path = r'D:\\sriram\\agrud\\NAV_scraping\\'
+local_file_path = r'D:\\sriram\\agrud\\NAV_scraping\\server_files\\'
 file_path = local_file_path
 data_file = file_path+'MF List - Final.csv'
-output_file = file_path+file_path.split('\\\\')[-2]+'_data.csv'
-non_scraped_isin_file = file_path+file_path.split('\\\\')[-2]+'_non_scraped_data.csv'
+output_file = file_path+'scraped_data.csv'
+non_scraped_isin_file = file_path+'non_scraped_data.csv'
 
 def send_email(row_count=0,status=None,err_text=None):
     sender_email = 'agrud.scrapersmail123@gmail.com'
@@ -125,7 +125,9 @@ def start():
         os.remove(non_scraped_isin_file)
     except:
         pass
+    
 
+    # task2()
     # process 1
     p1 = multiprocessing.Process(target=task1)
     p1.start()
