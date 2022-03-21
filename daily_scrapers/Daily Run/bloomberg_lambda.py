@@ -21,7 +21,7 @@ def get_driver():
     # options.add_argument('--single-process')
     # options.add_argument('--disable-dev-shm-usage')
     driver = webdriver.Chrome(service=s,options=options)
-    driver.minimize_window()
+    # driver.minimize_window()
     return driver
 
 # def get_driver():
@@ -79,7 +79,7 @@ def lambda_handler(event, context=''):
         # tor folder location
         driver = get_driver()
         driver.get(page_url)
-        driver.execute_script("window.stop();")
+        
         try:
             WebDriverWait(driver,3).until(EC.frame_to_be_available_and_switch_to_it(driver.find_element((By.XPATH,"//iframe[@id='sp_message_iframe_597169']"))))
         except:
@@ -94,7 +94,8 @@ def lambda_handler(event, context=''):
             driver.switch_to.default_content()
         except:
             pass
-
+        
+        driver.execute_script("window.stop();")
         last_height = driver.execute_script("return document.body.scrollHeight")
         while True:
             # Scroll down to bottom
@@ -105,7 +106,7 @@ def lambda_handler(event, context=''):
             if new_height == last_height:
                 break
             last_height = new_height
-       
+
         time.sleep(10)
         soup = BeautifulSoup(driver.page_source, 'html5lib')
 
