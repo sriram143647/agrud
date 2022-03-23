@@ -206,11 +206,11 @@ def start_prof_fundinfo_scraper():
         pass
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['master_id'])
+    df = df[~df['symbol'].isin(downloaded_isin)]
     for i,row in df.iterrows():
         isin = row[3]
         master_id = row[0]
-        if isin not in downloaded_isin:
-            prof_investor_gen_case(isin,master_id)
+        prof_investor_gen_case(isin,master_id)
     driver.quit()
     csv_filter()
             

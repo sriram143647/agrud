@@ -4,6 +4,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.common.exceptions import TimeoutException
 import csv
 import pandas as pd
 import numpy as np
@@ -11,7 +12,6 @@ from bs4 import BeautifulSoup
 import os
 client_user = 'phillipssec'
 client_pass = '52c4533bcc966857'
-login = 0
 domain = os.getcwd().split('\\')[-1].replace(' ','_')
 output_file = f'{domain}_data_links.csv'
 for file in os.listdir():
@@ -33,6 +33,7 @@ def get_driver():
     s=Service(ChromeDriverManager().install())
     options = webdriver.ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    # options.add_argument('--headless')
     driver = webdriver.Chrome(service=s,options=options)
     # driver.minimize_window()
     return driver
@@ -58,11 +59,6 @@ def csv_filter():
         pass
 
 def morningstar_gen_case(isin, master_id,driver=''):
-    global login
-    if login == 0:
-        driver = get_driver()
-        driver = morningstar_driver_login(driver)
-        login = 1
     print(isin)
     factsheet_link = ''
     prospectus_link = ''
@@ -82,7 +78,11 @@ def morningstar_gen_case(isin, master_id,driver=''):
     try:
         click_ele = WebDriverWait(driver,3).until(EC.visibility_of_element_located((By.XPATH,'//div[@class="ac_results"]')))
         click_ele.click()
-    except:
+    except TimeoutException:
+        row = [master_id,isin,factsheet_link,prospectus_link]
+        write_output(row)
+        return 0
+    except: 
         pass
 
     soup = BeautifulSoup(driver.page_source,'html5lib')
@@ -104,7 +104,7 @@ def morningstar_gen_case(isin, master_id,driver=''):
         pass
     row = [master_id,isin,factsheet_link,prospectus_link]
     write_output(row)
-    return driver
+    return 0
 
 def morningstar_driver_login(driver):
     link = 'https://doc.morningstar.com/Home.aspx'
@@ -132,7 +132,6 @@ def morningstar_driver_login(driver):
         driver.execute_script("arguments[0].click();",sign_in)
     except:
         pass
-    return driver
 
 def isin_downloaded():
     isin_downloaded = []
@@ -148,16 +147,14 @@ def start_morningstar_scraper():
     downloaded_isin = isin_downloaded()
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['master_id'])
-    start = 0
+    df = df[~df['symbol'].isin(downloaded_isin)]
+    driver = get_driver()
+    morningstar_driver_login(driver)
     for i,row in df.iterrows():
         isin = row[3]
         master_id = row[0]
-        if isin not in downloaded_isin:
-            if start == 0:
-                driver = morningstar_gen_case(isin,master_id)
-                start = 1
-            else:
-                morningstar_gen_case(isin,master_id,driver)
+        morningstar_gen_case(isin,master_id,driver)
+    driver.quit()
     csv_filter()
 
 

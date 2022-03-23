@@ -1,12 +1,8 @@
 import fundinfo.fundinfo_private_investor_scraper_sel as priv_fundinfo
 import fundinfo.fundinfo_professional_investor_scraper_sel as prof_fundinfo
 import morningstar.morningstar_scraper_sel as morningstar
-import moneycontroller.moneycontroller_scraper as moneycontroller
-import fundsingapore.fundsingapore_scraper as fundsingapore
-import pandas as pd
-import numpy as np
-import csv
-import os
+import moneycontroller.moneycontroller_scraper_sel as moneycontroller
+import fundsingapore.fundsingapore_scraper_sel as fundsingapore
 file_path = r'D:\\sriram\\agrud\\prospectus_and_factsheet\\'
 data_file = file_path+'Global _MF_Factsheet_Prospectus - FINAL GLOBAL MF LIST.csv'
 output_file = file_path+'scraped_data_links.csv'
@@ -20,9 +16,9 @@ def start_scrapers():
     priv_fundinfo.output_file = output_file
     priv_fundinfo.start_fundinfo_private_scraper()
 
-    prof_fundinfo.data_file = data_file
-    prof_fundinfo.output_file = output_file
-    prof_fundinfo.start_prof_fundinfo_scraper()
+    # prof_fundinfo.data_file = data_file
+    # prof_fundinfo.output_file = output_file
+    # prof_fundinfo.start_prof_fundinfo_scraper()
 
     # moneycontroller.data_file = data_file
     # moneycontroller.output_file = output_file

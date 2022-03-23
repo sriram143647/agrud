@@ -198,11 +198,11 @@ def start_fundinfo_private_scraper():
         pass
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['master_id'])
+    df = df[~df['symbol'].isin(downloaded_isin)]
     for i,row in df.iterrows():
         isin = row[3]
         master_id = row[0]
-        if isin not in downloaded_isin:
-            priv_investor_gen_case(driver,isin,master_id)
+        priv_investor_gen_case(driver,isin,master_id)
     driver.quit()
     csv_filter()
             
