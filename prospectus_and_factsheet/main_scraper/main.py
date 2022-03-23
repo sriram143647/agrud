@@ -46,7 +46,7 @@ def isin_downloaded():
 def get_data():
     case = 0
     csv_filter()
-    sites = ['morningstar','fundinfo','moneycontroller','fundsingapore']
+    sites = ['fundinfo','moneycontroller','fundsingapore']
     for site in sites:
         if site == 'morningstar':
             case = 1
@@ -107,5 +107,3 @@ if __name__ == '__main__':
             data_file = os.getcwd()+'\\'+file
             break
     get_data()
-
-# sites = ['morningstar','fundinfo','moneycontroller','fundsingapore']

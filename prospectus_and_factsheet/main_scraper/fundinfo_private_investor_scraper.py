@@ -101,7 +101,7 @@ def priv_investor_gen_case(isin,master_id):
             pass
         
         count = 1
-        while count < 5:
+        while count < 3:
             time.sleep(10)
             try:
                 url_ele_1 = driver.find_element(By.XPATH,'//*[@data-name="MR"]')

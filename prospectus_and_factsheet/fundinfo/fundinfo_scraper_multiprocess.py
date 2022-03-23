@@ -16,7 +16,7 @@ import multiprocessing
 
 domain = os.getcwd().split('\\')[-1].replace(' ','_')
 for file in os.listdir():
-    if '(Factsheet & Prospectus)' in file and '.csv' in file:
+    if 'Factsheet_Prospectus' in file and '.csv' in file:
         data_file = os.getcwd()+'\\'+file
         break
 
@@ -251,7 +251,7 @@ def prof_gen_case(args_list):
 
         count = 1
         while count < 5:
-            time.sleep(10)
+            time.sleep(5)
             hover_ele_xpath_1 = '//*[@data-name="MR"]'
             hover_ele(driver,hover_ele_xpath_1)
 
@@ -309,17 +309,17 @@ def process():
         for row in csvreader:
             isin_downloaded.append(row[1])
     df = pd.read_csv(data_file,encoding="utf-8")
-    df = df.drop_duplicates(subset=['Security ID'])
+    df = df.drop_duplicates(subset=['master_id'])
     for i,row in df.iterrows():
-        isin = row[4]
+        isin = row[3]
         master_id = row[0]
         if isin not in isin_downloaded:
             p1 = multiprocessing.Process(target=priv_gen_case,args=([isin,master_id],))
-            p2 = multiprocessing.Process(target=prof_gen_case,args=([isin,master_id],))
+            # p2 = multiprocessing.Process(target=prof_gen_case,args=([isin,master_id],))
             p1.start()
-            p2.start()
+            # p2.start()
             p1.join()
-            p2.join()
+            # p2.join()
 
 if __name__ == '__main__':  
     header_flag = csv_filter()

@@ -63,14 +63,14 @@ def get_files():
         except:
             pass
 
-        # pros link pdf download
-        try:
-            link = row[3]
-            file_path = prospectus_file_path+file_name+'.pdf'
-            download_thread = threading.Thread(target=file_download, args=(file_path,link,master_id,i))
-            download_thread.start()
-        except:
-            pass
+        # # pros link pdf download
+        # try:
+        #     link = row[3]
+        #     file_path = prospectus_file_path+file_name+'.pdf'
+        #     download_thread = threading.Thread(target=file_download, args=(file_path,link,master_id,i))
+        #     download_thread.start()
+        # except:
+        #     pass
 
 if __name__ == '__main__':
     start = datetime.now()  

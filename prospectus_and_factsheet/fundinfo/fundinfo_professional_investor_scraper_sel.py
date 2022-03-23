@@ -10,15 +10,17 @@ import time
 import pandas as pd
 from bs4 import BeautifulSoup
 import os
+import numpy as np
 domain = os.getcwd().split('\\')[-1].replace(' ','_')
+output_file = f'{domain}_data_links.csv'
 
 def write_header():
-    with open(f"{domain}_data_links.csv","a",newline="") as file:
+    with open(output_file,"a",newline="") as file:
         writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
         writer.writerow(['master id','isin name','factsheet link','prospectus link'])
 
 def write_output(data):
-    with open(f"{domain}_data_links.csv","a",newline="") as file:
+    with open(output_file,"a",newline="") as file:
         writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
         writer.writerow(data)
 
@@ -102,7 +104,7 @@ def prof_investor_gen_case(isin,master_id):
         
         count = 1
         while count < 5:
-            time.sleep(10)
+            time.sleep(5)
             try:
                 url_ele_1 = driver.find_element(By.XPATH,'//*[@data-name="MR"]')
                 hover_act = ActionChains(driver).move_to_element(url_ele_1)
@@ -148,7 +150,6 @@ def prof_investor_gen_case(isin,master_id):
                         country_change = 0
                         row = [master_id,isin,factsheet_link,prospectus_link]
                         write_output(row)
-                        driver.quit()
                         return 0
                     else:
                         count += 1
@@ -161,27 +162,61 @@ def prof_investor_gen_case(isin,master_id):
             continue
     row = [master_id,isin,factsheet_link,prospectus_link]
     write_output(row)
-    driver.quit()
+    return 0
 
-def get_data():
-    write_header()
+def csv_filter():
+    filtered_df = pd.DataFrame()
+    unique_isin = []
+    cols = ["master id","isin name","factsheet link","prospectus link"]
+    try:
+        df = pd.read_csv(output_file)
+    except FileNotFoundError:
+        write_header()
+        return 0
+    for isin,grouped_df in df.groupby(by=['isin name']):
+        for i,row in grouped_df.iterrows():
+            if row[2] is not np.nan and row[3] is not np.nan:
+                if isin not in unique_isin:
+                    unique_isin.append(isin)
+                    filtered_df = filtered_df.append(pd.DataFrame([row],columns=cols),ignore_index=True)
+    try:
+        filtered_df.to_csv(output_file,columns=cols,index=False)
+    except:
+        pass
+
+def isin_downloaded():
     isin_downloaded = []
-    with open(f"{domain}_data_links.csv","r") as file:
+    with open(output_file,"r") as file:
         csvreader = csv.reader(file)
         header = next(csvreader)
         for row in csvreader:
             isin_downloaded.append(row[1])
+    return isin_downloaded
+
+def start_prof_fundinfo_scraper():
+    csv_filter()
+    downloaded_isin = isin_downloaded()
+    driver = get_driver()
+    link = 'https://www.fundinfo.com/en'
+    driver.get(link)
+    try:
+        accept_btn = WebDriverWait(driver,3).until(EC.visibility_of_element_located((By.XPATH,'//*[@id="qc-cmp2-ui"]/div[2]/div/button[2]')))
+        accept_btn.click()
+    except:
+        pass
     df = pd.read_csv(data_file,encoding="utf-8")
-    df = df.drop_duplicates(subset=['Security ID'])
+    df = df.drop_duplicates(subset=['master_id'])
     for i,row in df.iterrows():
-        isin = row[2]
+        isin = row[3]
         master_id = row[0]
-        if isin not in isin_downloaded:
+        if isin not in downloaded_isin:
             prof_investor_gen_case(isin,master_id)
+    driver.quit()
+    csv_filter()
             
 if __name__ == '__main__':
     for file in os.listdir():
         if '(Factsheet & Prospectus)' in file and '.csv' in file:
             data_file = os.getcwd()+'\\'+file
             break  
-    get_data()
+    start_prof_fundinfo_scraper()
