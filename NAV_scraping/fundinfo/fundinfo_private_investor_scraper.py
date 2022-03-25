@@ -1,3 +1,4 @@
+from email import header
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium import webdriver
@@ -22,6 +23,7 @@ for file in os.listdir():
 def get_driver():
     options = webdriver.ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    options.add_argument('--log-level=OFF')
     # options.add_argument("--incognito")
     options.add_argument('--headless')
     driver = webdriver.Chrome(ChromeDriverManager().install(),options=options)
@@ -122,7 +124,7 @@ def priv_investor_scraper(header,isin,master_id):
             pass
         
         if nav_price != '' and nav_date != '':
-            row = [master_id,isin,nav_price,nav_date]
+            row = [master_id,isin,round(eval(nav_price),2),nav_date]
             write_output(row)
             return 0
         else:
@@ -154,6 +156,7 @@ def start_fundinfo_priv_scraper(case):
             if isin not in downloaded_isin and 'SG' not in isin:
                 priv_investor_scraper(header,isin,master_id)
     if case == 2:
+        df = df[df['Symbol'].str.contains('SG')]
         for i,row in df.iterrows():
             isin = row[0]
             master_id = row[2]
@@ -163,4 +166,8 @@ def start_fundinfo_priv_scraper(case):
     # db_insert(df)
             
 if __name__ == '__main__':
-    start_fundinfo_priv_scraper()
+    header = get_header()
+    isin = 'IE00B7F9FM77'
+    master_id = '138573'
+    priv_investor_scraper(header,isin,master_id)
+    # start_fundinfo_priv_scraper()

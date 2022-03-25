@@ -1,4 +1,5 @@
 from datetime import datetime
+from email import header
 from flask import session
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -38,6 +39,8 @@ def get_driver():
     s=Service(ChromeDriverManager().install())
     options = webdriver.ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    # options.add_argument("--incognito")
+    options.add_argument('--headless')
     driver = webdriver.Chrome(service=s,options=options)
     # driver.minimize_window()
     return driver
@@ -118,37 +121,60 @@ def isin_downloaded():
             isin_downloaded.append(row[1])
     return isin_downloaded
 
-def get_investment_id(header,isin):
+def get_isin_url(header,isin):
     tm_stmp = datetime.timestamp(datetime.now())
-    url = f'https://doc.morningstar.com/ajaxService/AutoComplete.aspx?q={isin}&limit=150&timestamp={tm_stmp}'
+    url = f'https://doc.morningstar.com/ajaxService/AutoComplete.aspx?q={isin}&limit=150&timestamp={int(tm_stmp)}'
     res = session.get(url,headers=header)
-    investment_id = res.text.replace('\r','').replace('\n','')[-2]
-    investment_type = res.text.replace('\r','').replace('\n','').split('|')[-1]
-    return investment_id,investment_type
+    if res.text != '':
+        investment_id =  res.text.replace('\r','').replace('\n','').split('|')[-2]
+        main_url = f'https://doc.morningstar.com/dochistory.aspx?secid={investment_id}'
+        return main_url
+    else:
+        main_url = ''
+        return main_url
 
-def morningstar_gen_case(isin, master_id,header):
+def morningstar_gen_case(header,main_url,isin,master_id):
+    # print(isin)
     factsheet_link = ''
     prospectus_link = ''
-    investment_id,investment_type = get_investment_id(header,isin)
-    main_url = f'https://doc.morningstar.com/dochistory.aspx?secid={investment_id}'
+    
     res = session.get(main_url,headers=header)
     soup = BeautifulSoup(res.text,'html5lib')
-    print(soup)
-
+    try:
+        rows = soup.find('table',{'id':'listContentBox'}).find_all('tr')    
+        for row in rows:
+            try:
+                if 'prospectus' == row.find('label').text.lower() and 'english' == row.find('td',{'class':'language'}).text.lower():
+                    if prospectus_link == '':
+                        prospectus_link = 'https://doc.morningstar.com/'+row.find('a',{'class':'g-pdf-icon g-vv'}).get('href')
+                if 'factsheet' == row.find('label').text.lower() and 'english' == row.find('td',{'class':'language'}).text.lower():
+                    if factsheet_link == '':
+                        factsheet_link = 'https://doc.morningstar.com/'+row.find('a',{'class':'g-pdf-icon g-vv'}).get('href')
+                if factsheet_link != '' and prospectus_link != '':
+                    break
+            except:
+                continue
+    except:
+        pass
+    row = [master_id,isin,factsheet_link,prospectus_link]
+    write_output(row)
+    return 0
+    
 def start_morningstar_scraper():
     csv_filter()
     downloaded_isin = isin_downloaded()
     header = get_header()
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['master_id'])
+    df = df[~df['symbol'].isin(downloaded_isin)]
     for i,row in df.iterrows():
         isin = row[3]
         master_id = row[0]
-        if isin not in downloaded_isin:
-            morningstar_gen_case(isin,master_id,header)
+        main_url = get_isin_url(header,isin)
+        if main_url == '':
+            continue
+        morningstar_gen_case(header,main_url,isin,master_id)
+    csv_filter()
             
-
-
-    
 if __name__ == '__main__':
     start_morningstar_scraper()

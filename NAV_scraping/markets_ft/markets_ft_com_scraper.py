@@ -20,7 +20,7 @@ for file in os.listdir():
 
 def get_driver():
     options = webdriver.ChromeOptions()
-    options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    options.add_experimental_option('excludeSwitches',['enable-logging'])
     # options.add_argument("--incognito")
     options.add_argument('--headless')
     driver = webdriver.Chrome(ChromeDriverManager().install(),options=options)
@@ -106,7 +106,7 @@ def markets_ft_scraper(header,isin,master_id,curr):
     res = session.get(url,headers=header)
     soup = BeautifulSoup(res.text,'html5lib')
     try:
-        nav_price = soup.find('span',{'class':'mod-ui-data-list__value'}).text.replace(',','').strip()
+        nav_price =  soup.find('span',{'class':'mod-ui-data-list__value'}).text.replace(',','').strip()
         if '%' in nav_price:
             nav_price = ''
         date_tag = soup.find('ul',{'class':'mod-tearsheet-overview__quote__bar'})
@@ -125,7 +125,7 @@ def markets_ft_scraper(header,isin,master_id,curr):
     except:
         pass    
     if nav_price != '' and nav_date != '':
-        row = [master_id,isin,nav_price,nav_date]
+        row = [master_id,isin,round(eval(nav_price),2),nav_date]
         write_output(row)
         return 0
     else:

@@ -1,16 +1,13 @@
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.service import Service
-from selenium.common.exceptions import TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
 import csv
-import time
 import pandas as pd
 import numpy as np
 from bs4 import BeautifulSoup
 import os
+import requests
+session = requests.session()
 domain = os.getcwd().split('\\')[-1].replace(' ','_')
 output_file = f'{domain}_data_links.csv'
 
@@ -28,65 +25,49 @@ def get_driver():
     s=Service(ChromeDriverManager().install())
     options = webdriver.ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
-    # options.add_argument('--headless')
+    options.add_argument('--headless')
     driver = webdriver.Chrome(service=s,options=options)
     # driver.minimize_window()
     return driver
 
-def moneycontroller_gen_case(driver,isin,master_id):
-    print(isin)
+def getCookie(url):
+    driver = get_driver()
+    driver.get(url)
+    cookies_list = driver.get_cookies()
+    cookies_json = {}
+    for cookie in cookies_list:
+        cookies_json[cookie['name']] = cookie['value']
+    cookies_string = str(cookies_json).replace("{", "").replace("}", "").replace("'", "").replace(": ", "=").replace(",", ";")
+    driver.quit()
+    return cookies_string
+
+def get_header():
+    link = 'https://www.moneycontroller.co.uk/'
+    header = {
+        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        'cookie': getCookie(link),
+        'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36'
+    }
+    return header
+
+def get_data():
+    pass
+
+def moneycontroller_gen_case(header,isin,master_id):
     factsheet_link = ''
     prospectus_link = ''
-
+    url = f'https://www.moneycontroller.co.uk/return-performance-funds-etfs?search={isin}'
+    res = session.get(url,headers=header)
+    soup = BeautifulSoup(res.text,'html5lib')
     try:
-        accept_ele = WebDriverWait(driver,3).until(EC.visibility_of_element_located((By.XPATH,'//button[@class="iubenda-cs-accept-btn iubenda-cs-btn-primary"]')))
-        accept_ele.click()
+        link = soup.find('td',{'class':'nome_fondo'}).find('a').get('href')
     except:
-        pass
-    
-    try:
-        search_in = WebDriverWait(driver,3).until(EC.visibility_of_element_located((By.XPATH,'//div[@class="searchform"]/input')))
-        search_in.clear()
-    except:
-        try:
-            search_in = WebDriverWait(driver,3).until(EC.visibility_of_element_located((By.XPATH,'//*[@id="titolo_isin"]')))
-            search_in.clear()
-        except:
-            pass
-
-    try:
-        search_in = WebDriverWait(driver,3).until(EC.visibility_of_element_located((By.XPATH,'//div[@class="searchform"]/input')))
-        search_in.send_keys(isin)
-    except:
-        try:
-            search_in = WebDriverWait(driver,3).until(EC.visibility_of_element_located((By.XPATH,'//*[@id="titolo_isin"]')))
-            search_in.send_keys(isin)
-        except:
-            pass
-
-    try:
-        search_btn = WebDriverWait(driver,3).until(EC.visibility_of_element_located((By.XPATH,'//div[@class="searchform"]/button')))
-        search_btn.click()
-    except:
-        try:
-            search_btn = WebDriverWait(driver,3).until(EC.visibility_of_element_located((By.XPATH,'//*[@type="submit"]')))
-            search_btn.click()
-        except:
-            pass
-    
-    try:
-        fund_link = WebDriverWait(driver,3).until(EC.visibility_of_element_located((By.XPATH,'//td[@class="nome_fondo"]/a')))
-        fund_link.click()
-    except TimeoutException:
         row = [master_id,isin,factsheet_link,prospectus_link]
         write_output(row)
         return 0
-    except Exception as e:
-        pass    
-
-    time.sleep(10)
-    soup = BeautifulSoup(driver.page_source,'html5lib')
-    links = soup.find('ul',{'class':'doc_list'}).find_all('li')
+    res2 = session.get(link,headers=header)
+    soup2 = BeautifulSoup(res2.text,'html5lib')
+    links = soup2.find('ul',{'class':'doc_list'}).find_all('li')
     for link in links:
         if 'fact sheet' in link.find('a').text.lower():
             if factsheet_link == '':
@@ -136,27 +117,19 @@ def isin_downloaded():
 def start_moneycontroller_scraper():
     csv_filter()
     downloaded_isin = isin_downloaded()
-    driver = get_driver()
-    link = 'https://www.moneycontroller.co.uk/'
-    driver.get(link)
-    try:
-        accept_ele = WebDriverWait(driver,3).until(EC.visibility_of_element_located((By.XPATH,'//button[@class="iubenda-cs-accept-btn iubenda-cs-btn-primary"]')))
-        accept_ele.click()
-    except:
-        pass
+    header = get_header()
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['master_id'])
+    df = df[~df['symbol'].isin(downloaded_isin)]
     for i,row in df.iterrows():
         isin = row[3]
         master_id = row[0]
-        if isin not in downloaded_isin:
-            moneycontroller_gen_case(driver,isin,master_id)
-    driver.quit()
+        moneycontroller_gen_case(header,isin,master_id)
     csv_filter()
 
 if __name__ == '__main__':
     for file in os.listdir():
-        if '(Factsheet & Prospectus)' in file and '.csv' in file:
+        if 'Factsheet_Prospectus' in file and '.csv' in file:
             data_file = os.getcwd()+'\\'+file
             break  
     start_moneycontroller_scraper()

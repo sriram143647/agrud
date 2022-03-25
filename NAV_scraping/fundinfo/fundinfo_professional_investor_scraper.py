@@ -23,6 +23,7 @@ for file in os.listdir():
 def get_driver():
     options = webdriver.ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    options.add_argument('--log-level=OFF')
     # options.add_argument("--incognito")
     options.add_argument('--headless')
     driver = webdriver.Chrome(ChromeDriverManager().install(),options=options)
@@ -123,7 +124,7 @@ def prof_investor_scraper(header,isin,master_id):
             pass
         
         if nav_price != '' and nav_date != '':
-            row = [master_id,isin,nav_price,nav_date]
+            row = [master_id,isin,round(eval(nav_price),2),nav_date]
             write_output(row)
             return 0
         else:
@@ -135,7 +136,7 @@ def prof_investor_scraper(header,isin,master_id):
 
 def isin_downloaded():
     isin_downloaded = []
-    with open(f"{domain}_data.csv","r") as file:
+    with open(output_file,"r") as file:
         csvreader = csv.reader(file)
         header = next(csvreader)
         for row in csvreader:
@@ -155,6 +156,7 @@ def start_fundinfo_prof_scraper(case):
             if isin not in downloaded_isin and 'SG' not in isin:
                 prof_investor_scraper(header,isin,master_id)
     if case == 2:
+        df = df[df['Symbol'].str.contains('SG')]
         for i,row in df.iterrows():
             isin = row[0]
             master_id = row[2]

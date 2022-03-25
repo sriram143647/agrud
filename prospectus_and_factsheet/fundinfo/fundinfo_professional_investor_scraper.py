@@ -51,7 +51,7 @@ def get_header():
 def write_header():
     with open(output_file,"a",newline="") as file:
         writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
-        writer.writerow(['master id','isin name','price','date'])
+        writer.writerow(["master id","isin name","factsheet link","prospectus link"])
 
 def write_output(data):
     with open(output_file,"a",newline="") as file:
@@ -61,7 +61,7 @@ def write_output(data):
 def csv_filter():
     filtered_df = pd.DataFrame()
     unique_isin = []
-    cols = ['master id','isin name','price','date']
+    cols = ["master id","isin name","factsheet link","prospectus link"]
     try:
         df = pd.read_csv(output_file,encoding='utf-8')
     except FileNotFoundError:
@@ -79,7 +79,7 @@ def csv_filter():
     except:
         pass
 
-def priv_investor_scraper(header,isin,master_id):
+def prof_investor_scraper(header,isin,master_id):
     factsheet_link = ''
     prospectus_link = ''
     for country in ['LU','SG','HK','CH','GB','IE','DE','SE']:
@@ -125,7 +125,7 @@ def isin_downloaded():
             isin_downloaded.append(row[1])
     return isin_downloaded
 
-def start_fundinfo_priv_scraper():
+def start_fundinfo_prof_scraper():
     csv_filter()
     downloaded_isin = isin_downloaded()
     header = get_header()
@@ -135,10 +135,8 @@ def start_fundinfo_priv_scraper():
     for i,row in df.iterrows():
         isin = row[3]
         master_id = row[0]
-        priv_investor_scraper(header,isin,master_id)
+        prof_investor_scraper(header,isin,master_id)
     csv_filter()
             
 if __name__ == '__main__':
-    start_fundinfo_priv_scraper()
-
-# IE00B7F9FM77
+    start_fundinfo_prof_scraper()

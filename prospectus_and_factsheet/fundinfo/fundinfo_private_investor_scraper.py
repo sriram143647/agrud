@@ -51,7 +51,7 @@ def get_header():
 def write_header():
     with open(output_file,"a",newline="") as file:
         writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
-        writer.writerow(['master id','isin name','price','date'])
+        writer.writerow(["master id","isin name","factsheet link","prospectus link"])
 
 def write_output(data):
     with open(output_file,"a",newline="") as file:
@@ -61,7 +61,7 @@ def write_output(data):
 def csv_filter():
     filtered_df = pd.DataFrame()
     unique_isin = []
-    cols = ['master id','isin name','price','date']
+    cols = ["master id","isin name","factsheet link","prospectus link"]
     try:
         df = pd.read_csv(output_file,encoding='utf-8')
     except FileNotFoundError:
@@ -140,5 +140,3 @@ def start_fundinfo_priv_scraper():
             
 if __name__ == '__main__':
     start_fundinfo_priv_scraper()
-
-# IE00B7F9FM77

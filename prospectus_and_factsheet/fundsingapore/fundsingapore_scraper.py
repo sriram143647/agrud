@@ -1,16 +1,14 @@
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-from selenium.common.exceptions import TimeoutException
 import csv
-import time
 import pandas as pd
 import numpy as np
 from bs4 import BeautifulSoup
 import os
+import json
+import requests
+session = requests.session()
 domain = os.getcwd().split('\\')[-1].replace(' ','_')
 output_file = f'{domain}_data_links.csv'
 
@@ -28,88 +26,30 @@ def get_driver():
     s=Service(ChromeDriverManager().install())
     options = webdriver.ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    options.add_argument('--headless')
     driver = webdriver.Chrome(service=s,options=options)
     # driver.minimize_window()
     return driver
 
-def fundsingapore_gen_case(isin,master_id):
-    print(isin)
-    factsheet_link = ''
-    prospectus_link = ''
+def getCookie(url):
     driver = get_driver()
-    link = 'https://fundsingapore.com/fund-library'
-    driver.get(link)
-    try:
-        search_in = WebDriverWait(driver,3).until(EC.visibility_of_element_located((By.XPATH,'//*[@class="SearchInput_searchInput__y_s8m"]/section/input')))
-        search_in.send_keys(isin)
-    except:
-        pass
-
-    try:
-        search_btn = WebDriverWait(driver,3).until(EC.visibility_of_element_located((By.XPATH,'//*[@class="SearchInput_searchInput__y_s8m"]/button')))
-        search_btn.click()
-    except:
-        pass
-
-    try:
-        fund_ele = WebDriverWait(driver,3).until(EC.visibility_of_element_located((By.XPATH,'//*[@class="tr tr0"]/div[2]/header/h6')))
-        driver.execute_script("arguments[0].click();",fund_ele)
-    except TimeoutException:
-        driver.quit()
-        row = [master_id,isin,factsheet_link,prospectus_link]
-        write_output(row)
-        return 0
-    except Exception as e:
-        pass
-    
-    for _ in range(15):
-        try:
-            WebDriverWait(driver,3).until(EC.visibility_of_element_located((By.XPATH,'//*[@class="FundDetailHeader_fdHeader__head__2_9Cn"]/hgroup/h1')))
-            break
-        except:
-            continue
-        
-    last_height = driver.execute_script("return document.body.scrollHeight")
-    while True:
-        # Scroll down to bottom
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        
-        # Calculate new scroll height and compare with last scroll height
-        new_height = driver.execute_script("return document.body.scrollHeight")
-        if new_height == last_height:
-            break
-        last_height = new_height
-
-    time.sleep(5)
-    soup = BeautifulSoup(driver.page_source,'html5lib')
-    try:
-        links = soup.find('section',{'class':'FundDocuments_fundDocuments__3tpgn'}).find_all('a')
-        for link in links:
-            if 'prospectus' in  link.get('title').lower(): 
-                if prospectus_link == '':
-                    try:
-                        prospectus_link = soup.find('section',{'class':'FundDocuments_fundDocuments__3tpgn'}).find('a',{'title':'Prospectus'}).get('href')
-                    except:
-                        prospectus_link = ''
-
-            if 'factsheet' in link.get('title').lower():
-                if factsheet_link == '':
-                    try:
-                        factsheet_link = soup.find('section',{'class':'FundDocuments_fundDocuments__3tpgn'}).find('a',{'title':'Factsheet'}).get('href')
-                    except:
-                        factsheet_link = ''
-
-            if factsheet_link != '' and prospectus_link != '':
-                row = [master_id,isin,factsheet_link,prospectus_link]
-                write_output(row)
-                driver.quit()
-                return 0
-    except:
-        pass
-    row = [master_id,isin,factsheet_link,prospectus_link]
-    write_output(row)
+    driver.get(url)
+    cookies_list = driver.get_cookies()
+    cookies_json = {}
+    for cookie in cookies_list:
+        cookies_json[cookie['name']] = cookie['value']
+    cookies_string = str(cookies_json).replace("{", "").replace("}", "").replace("'", "").replace(": ", "=").replace(",", ";")
     driver.quit()
-    return 0
+    return cookies_string
+
+def get_header():
+    link = 'https://fundsingapore.com/fund-library'
+    header = {
+        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        'cookie': getCookie(link),
+        'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36'
+    }
+    return header
 
 def csv_filter():
     filtered_df = pd.DataFrame()
@@ -131,6 +71,25 @@ def csv_filter():
     except:
         pass
 
+def fundsingapore_gen_case(header,sec_id,isin,master_id):
+    print(isin)
+    factsheet_link = ''
+    prospectus_link = ''
+    isin_url = f'https://fundsingapore.com/_next/data/iotxu9PBEI233byXZaoYW/fund-library/fund-details.json?id={sec_id}'
+    res = session.get(isin_url,headers=header)
+    j_data = json.loads(res.text)
+    docs = j_data['pageProps']['ssrFundDetails']['Documents']
+    for doc in docs:
+        if doc['DocumentTypes'][0] == '52':
+            doc_encode_id = doc['EncodedDocumentId']
+            factsheet_link = f'https://doc.morningstar.com/document/{doc_encode_id}.msdoc/?clientid=imassg&key=32545d22b2a6e612'
+        if doc['DocumentTypes'][0] == '1':
+            doc_encode_id = doc['EncodedDocumentId']
+            prospectus_link = f'https://doc.morningstar.com/document/{doc_encode_id}.msdoc/?clientid=imassg&key=32545d22b2a6e612'
+    row = [master_id,isin,factsheet_link,prospectus_link]
+    write_output(row)
+    return 0
+
 def isin_downloaded():
     isin_downloaded = []
     with open(output_file,"r") as file:
@@ -143,19 +102,28 @@ def isin_downloaded():
 def start_fundsingapore_scraper():
     csv_filter()
     downloaded_isin = isin_downloaded()
+    header = get_header()
+    url ='https://fundsingapore.com/fund-library'
+    res = requests.get(url,headers=header)
+    soup = BeautifulSoup(res.text,'html5lib')
+    data = soup.find('script',{'type':'application/json'}).string
+    j_data = json.loads(data)
+    src_list = j_data['props']['pageProps']['ssrAllFunds']
     df = pd.read_csv(data_file,encoding="utf-8")
-    df = df.drop_duplicates(subset=['Security ID'])
+    df = df.drop_duplicates(subset=['master_id'])
+    df = df[~df['symbol'].isin(downloaded_isin)]
     for i,row in df.iterrows():
-        isin = row[4]
+        isin = row[3]
         master_id = row[0]
-        if 'SG' in isin:
-            if isin not in downloaded_isin:
-                fundsingapore_gen_case(isin,master_id)
+        for src in src_list:
+            if isin == src['ISIN']:
+                sec_id = src['SecId']
+                fundsingapore_gen_case(header,sec_id,isin,master_id)
     csv_filter()
 
 if __name__ == '__main__':
     for file in os.listdir():
-        if '(Factsheet & Prospectus)' in file and '.csv' in file:
+        if 'Factsheet_Prospectus' in file and '.csv' in file:
             data_file = os.getcwd()+'\\'+file
             break  
     start_fundsingapore_scraper()
