@@ -149,19 +149,18 @@ def start_fundinfo_prof_scraper(case):
     header = get_header()
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['Master ID'])
+    df = df[~df['Symbol'].isin(downloaded_isin)]
     if case == 1:
         for i,row in df.iterrows():
             isin = row[0]
             master_id = row[2]
-            if isin not in downloaded_isin and 'SG' not in isin:
-                prof_investor_scraper(header,isin,master_id)
+            prof_investor_scraper(header,isin,master_id)
     if case == 2:
         df = df[df['Symbol'].str.contains('SG')]
         for i,row in df.iterrows():
             isin = row[0]
             master_id = row[2]
-            if isin not in downloaded_isin and 'SG' in isin:
-                prof_investor_scraper(header,isin,master_id)
+            prof_investor_scraper(header,isin,master_id)
     df = csv_filter()
     # db_insert(df)
             

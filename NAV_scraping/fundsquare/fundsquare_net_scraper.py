@@ -153,11 +153,11 @@ def start_fundsquare_scraper():
     header = get_header()
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['Master ID'])
+    df = df[~df['Symbol'].isin(downloaded_isin)]
     for i,row in df.iterrows():
         isin = row[0]
         master_id = row[2]
-        if isin not in downloaded_isin and 'SG' not in isin:
-            fundsquare_scraper(header,isin,master_id)
+        fundsquare_scraper(header,isin,master_id)
     df = csv_filter()
     # db_insert(df)
 

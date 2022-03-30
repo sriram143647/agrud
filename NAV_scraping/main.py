@@ -1,21 +1,20 @@
+from datetime import datetime
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
 import markets_ft.markets_ft_com_scraper as market
 import fundsquare.fundsquare_net_scraper as fundsquare
 import fundinfo.fundinfo_private_investor_scraper as priv_fundinfo
 import fundinfo.fundinfo_professional_investor_scraper as prof_fundinfo
 import sg_morningstar.sg_morningstar_scraper as morningstar
 import pandas as pd
-from datetime import datetime
-from email import encoders
-from email.mime.base import MIMEBase
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import smtplib,ssl
 import multiprocessing
 import time
 import os
 import logging as log
-file_path = '/home/ubuntu/rentech/nav_scraping/'
-# file_path = r'D:\\sriram\\agrud\\NAV_scraping\\server_files\\'
+# file_path = '/home/ubuntu/rentech/nav_scraping/'
+file_path = r'D:\\sriram\\agrud\\NAV_scraping\\server_files\\'
 data_file = file_path+'MF List - Final.csv'
 output_file = file_path+'scraped_data.csv'
 non_scraped_isin_file = file_path+'non_scraped_data.csv'
@@ -36,11 +35,7 @@ def send_email(row_count=0,status=None,err_text=None):
     msg.attach(MIMEText(body,'plain'))
     attach_file_name = non_scraped_isin_file
     with open(attach_file_name,'rb') as send_file:
-        payload = MIMEBase('application', 'octate-stream')
-        payload.set_payload(send_file.read())
-    encoders.encode_base64(payload) 
-    payload.add_header('Content-Decomposition',f'attachment; filename={attach_file_name}')
-    msg.attach(payload)
+        msg.attach(MIMEApplication(send_file.read(), Name='non_scraped_data.csv'))
     text = msg.as_string()
     context = ssl.create_default_context()
     server = smtplib.SMTP('smtp.gmail.com',587)
@@ -67,6 +62,7 @@ def db_insert(df):
         db_conn.commit()
         send_email(row_count=rows,status='success')
     except Exception as e:
+        pass
         my_log.info(f'Exception: {e}')
     finally:
         if (db_conn.is_connected()):
@@ -74,67 +70,84 @@ def db_insert(df):
             db_conn.close()
             my_log.info('Connection closed')
 
-def task1():
+def retry(func,retries=1):
+    def retry_wrapper(*args,**kwargs):
+        attempt = 0
+        while attempt <= retries:
+            try:
+                my_log.info(f'Attempt {attempt}')
+                return func(*args,**kwargs)
+            except:
+                my_log.info('Exception occured')
+                attempt += 1
+                pass
+    return retry_wrapper
+
+@retry
+def market_ft_func():
     # market_ft scraper
-    my_log.info(f'{datetime.now()} Task1 market_ft scraping')
+    my_log.info(f'{datetime.now()} market_ft scraping started')
     market.output_file = output_file
     market.data_file = data_file
     market.non_scraped_isin_file = non_scraped_isin_file
     market.start_markets_ft_scraper()
-    my_log.info(f'{datetime.now()} Task1 market_ft scraping ended')
+    my_log.info(f'{datetime.now()} market_ft scraping ended')
 
+@retry
+def fundsquare_func():
     # fundsquare scraper
-    my_log.info(f'{datetime.now()} Task1 fundsquare scraping')
+    my_log.info(f'{datetime.now()} fundsquare scraping started')
     fundsquare.output_file = output_file
     fundsquare.data_file = data_file
     fundsquare.non_scraped_isin_file = non_scraped_isin_file
     fundsquare.start_fundsquare_scraper()
-    my_log.info(f'{datetime.now()} Task1 fundsquare scraping ended')
+    my_log.info(f'{datetime.now()} fundsquare scraping ended')
 
+@retry
+def priv_fundinfo_func():
     # priv_fundinfo scraper
-    my_log.info(f'{datetime.now()} Task1 fundinfo private scraping')
+    my_log.info(f'{datetime.now()} fundinfo private scraping started')
     priv_fundinfo.output_file = output_file
     priv_fundinfo.data_file = data_file
     priv_fundinfo.non_scraped_isin_file = non_scraped_isin_file
     priv_fundinfo.start_fundinfo_priv_scraper(case=1)
-    my_log.info(f'{datetime.now()} Task1 fundinfo private scraping ended')
+    my_log.info(f'{datetime.now()} fundinfo private scraping ended')
 
+@retry
+def prof_fundinfo_func():
     # prof_fundinfo scraper
-    my_log.info(f'{datetime.now()} Task1 fundinfo professional scraping')
+    my_log.info(f'{datetime.now()} fundinfo professional scraping started')
     prof_fundinfo.output_file = output_file
     prof_fundinfo.data_file = data_file
     prof_fundinfo.non_scraped_isin_file = non_scraped_isin_file
     prof_fundinfo.start_fundinfo_prof_scraper(case=1)
-    my_log.info(f'{datetime.now()} Task1 fundinfo professional scraping ended')
+    my_log.info(f'{datetime.now()} fundinfo professional scraping ended')
 
-def task2():
+@retry
+def morningstar_func():
     # morningstar scraper
-    my_log.info(f'{datetime.now()} Task2 morningstar scraping')
+    my_log.info(f'{datetime.now()} morningstar scraping started')
     morningstar.output_file = output_file
     morningstar.data_file = data_file
     morningstar.non_scraped_isin_file = non_scraped_isin_file
     morningstar.start_sg_morningstar_scraper()
-    my_log.info(f'{datetime.now()} Task2 morningstar scraping ended')
+    my_log.info(f'{datetime.now()} morningstar scraping ended')
 
-    # priv_fundinfo scraper
-    my_log.info(f'{datetime.now()} Task2 fundinfo private scraping')
-    priv_fundinfo.output_file = output_file
-    priv_fundinfo.data_file = data_file
-    priv_fundinfo.non_scraped_isin_file = non_scraped_isin_file
-    priv_fundinfo.start_fundinfo_priv_scraper(case=2)
-    my_log.info(f'{datetime.now()} Task2 fundinfo private scraping ended')
+def task1():
+    market_ft_func()
+    fundsquare_func()
+    priv_fundinfo_func()
+    prof_fundinfo_func()
+        
 
-    # prof_fundinfo scraper
-    my_log.info(f'{datetime.now()} Task2 fundinfo professional scraping')
-    prof_fundinfo.output_file = output_file
-    prof_fundinfo.data_file = data_file
-    prof_fundinfo.non_scraped_isin_file = non_scraped_isin_file
-    prof_fundinfo.start_fundinfo_prof_scraper(case=2)
-    my_log.info(f'{datetime.now()} Task2 fundinfo professional scraping ended')
+def task2():
+    morningstar_func()
+    priv_fundinfo_func()
+    prof_fundinfo_func()
 
 def start():
     my_log.info(f'-------------------start time: {datetime.now()}-------------------')
-    # # files deletion
+    # files deletion
     try:
         os.remove(output_file)
     except:
@@ -149,7 +162,7 @@ def start():
         os.remove(log_file)
     except:
         pass
-    
+
     # process 1
     p1 = multiprocessing.Process(target=task1)
     p1.start()
@@ -161,7 +174,7 @@ def start():
     # process join
     p1.join()
     p2.join()
-    
+
     # drop duplicate isin
     time.sleep(10)
     df = pd.read_csv(non_scraped_isin_file,encoding='utf-8',header=None)
@@ -173,9 +186,6 @@ def start():
     df = pd.read_csv(output_file,encoding='utf-8')
     db_insert(df)
     my_log.info(f'-------------------end time: {datetime.now()}-------------------')
-    
+
 if __name__ == '__main__':
-    try:
-        start()
-    except:
-        start()
+    start()

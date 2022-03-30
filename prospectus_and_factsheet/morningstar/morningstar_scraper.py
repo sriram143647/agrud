@@ -1,6 +1,4 @@
 from datetime import datetime
-from email import header
-from flask import session
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -23,7 +21,7 @@ output_file = f'{domain}_data_links.csv'
 for file in os.listdir():
     if 'Factsheet_Prospectus' in file and '.csv' in file:
         data_file = os.getcwd()+'\\'+file
-        break  
+        break
 
 def write_header():
     with open(output_file,"a",newline="") as file:
@@ -134,22 +132,21 @@ def get_isin_url(header,isin):
         return main_url
 
 def morningstar_gen_case(header,main_url,isin,master_id):
-    # print(isin)
     factsheet_link = ''
     prospectus_link = ''
     
     res = session.get(main_url,headers=header)
     soup = BeautifulSoup(res.text,'html5lib')
     try:
-        rows = soup.find('table',{'id':'listContentBox'}).find_all('tr')    
+        rows = soup.find('table',{'id':'listContentBox'}).find_all('tr')
         for row in rows:
             try:
-                if 'prospectus' == row.find('label').text.lower() and 'english' == row.find('td',{'class':'language'}).text.lower():
-                    if prospectus_link == '':
-                        prospectus_link = 'https://doc.morningstar.com/'+row.find('a',{'class':'g-pdf-icon g-vv'}).get('href')
                 if 'factsheet' == row.find('label').text.lower() and 'english' == row.find('td',{'class':'language'}).text.lower():
                     if factsheet_link == '':
                         factsheet_link = 'https://doc.morningstar.com/'+row.find('a',{'class':'g-pdf-icon g-vv'}).get('href')
+                if 'prospectus' == row.find('label').text.lower() and 'english' == row.find('td',{'class':'language'}).text.lower():
+                    if prospectus_link == '':
+                        prospectus_link = 'https://doc.morningstar.com/'+row.find('a',{'class':'g-pdf-icon g-vv'}).get('href')
                 if factsheet_link != '' and prospectus_link != '':
                     break
             except:

@@ -72,13 +72,17 @@ def csv_filter():
         pass
 
 def fundsingapore_gen_case(header,sec_id,isin,master_id):
-    print(isin)
     factsheet_link = ''
     prospectus_link = ''
     isin_url = f'https://fundsingapore.com/_next/data/iotxu9PBEI233byXZaoYW/fund-library/fund-details.json?id={sec_id}'
     res = session.get(isin_url,headers=header)
     j_data = json.loads(res.text)
-    docs = j_data['pageProps']['ssrFundDetails']['Documents']
+    try:
+        docs = j_data['pageProps']['ssrFundDetails']['Documents']
+    except:
+        row = [master_id,isin,factsheet_link,prospectus_link]
+        write_output(row)
+        return 0    
     for doc in docs:
         if doc['DocumentTypes'][0] == '52':
             doc_encode_id = doc['EncodedDocumentId']

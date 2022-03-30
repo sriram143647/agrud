@@ -150,12 +150,12 @@ def start_markets_ft_scraper():
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['Master ID'])
     df = df[df['Currency'].notna()]
+    df = df[~df['Symbol'].isin(downloaded_isin)]
     for i,row in df.iterrows():
         isin = row[0]
         curr = row[1]
         master_id = row[2]
-        if isin not in downloaded_isin and 'SG' not in isin:
-            markets_ft_scraper(header,isin,master_id,curr)
+        markets_ft_scraper(header,isin,master_id,curr)
     df = csv_filter()
     # db_insert(df)
 

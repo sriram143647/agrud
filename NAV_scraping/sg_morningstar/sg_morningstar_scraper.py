@@ -1,5 +1,4 @@
-from email import header
-from sys import api_version
+from doctest import master
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium import webdriver
@@ -190,7 +189,7 @@ def start_sg_morningstar_scraper():
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['Master ID'])
     df = df[df['Symbol'].str.contains('SG')]
-    df = df[~df['symbol'].isin(downloaded_isin)]
+    df = df[~df['Symbol'].isin(downloaded_isin)]
     for i,row in df.iterrows():
         isin = row[0]
         master_id = row[2]
@@ -201,3 +200,8 @@ def start_sg_morningstar_scraper():
 
 if __name__ == '__main__':
     start_sg_morningstar_scraper()
+    # master_id = '140871'
+    # isin = 'GB0000796242'
+    # header,api_header = get_headers()
+    # morningstar_gen_case(api_header,header,isin, master_id)
+

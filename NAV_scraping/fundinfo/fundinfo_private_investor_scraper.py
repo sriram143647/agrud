@@ -149,25 +149,20 @@ def start_fundinfo_priv_scraper(case):
     header = get_header()
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['Master ID'])
+    df = df[~df['Symbol'].isin(downloaded_isin)]
     if case == 1:
         for i,row in df.iterrows():
             isin = row[0]
             master_id = row[2]
-            if isin not in downloaded_isin and 'SG' not in isin:
-                priv_investor_scraper(header,isin,master_id)
+            priv_investor_scraper(header,isin,master_id)
     if case == 2:
         df = df[df['Symbol'].str.contains('SG')]
         for i,row in df.iterrows():
             isin = row[0]
             master_id = row[2]
-            if isin not in downloaded_isin and 'SG' in isin:
-                priv_investor_scraper(header,isin,master_id)
+            priv_investor_scraper(header,isin,master_id)
     df = csv_filter()
     # db_insert(df)
             
 if __name__ == '__main__':
-    header = get_header()
-    isin = 'IE00B7F9FM77'
-    master_id = '138573'
-    priv_investor_scraper(header,isin,master_id)
-    # start_fundinfo_priv_scraper()
+    start_fundinfo_priv_scraper()
