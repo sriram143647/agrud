@@ -1,4 +1,4 @@
-from email import header
+from doctest import master
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium import webdriver
@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 from bs4 import BeautifulSoup
 import os
+import concurrent.futures
 session = requests.session()
 domain = os.getcwd().split('\\')[-1].replace(' ','_')
 output_file = f"{domain}_data.csv"
@@ -76,11 +77,6 @@ def write_header():
         writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
         writer.writerow(['master id','isin name','price','date'])
 
-def write_output(data):
-    with open(output_file,"a",newline="") as file:
-        writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
-        writer.writerow(data)
-
 def csv_filter():
     filtered_df = pd.DataFrame()
     unique_isin = []
@@ -102,50 +98,45 @@ def csv_filter():
     except:
         pass
 
-def priv_investor_scraper(header,isin,master_id):
+def priv_investor_scraper(header,lst):
     nav_price = ''
     nav_date = ''
-    for country in ['LU','SG','HK','CH','GB','IE','DE','SE']:
-        if 'SG' in isin:
-            country = 'SG'
-        url = f'https://fundinfo.com/en/{country}-priv/LandingPage/Data?skip=0&query={isin}&orderdirection='
-        res = session.get(url,headers=header)
-        soup = BeautifulSoup(res.text,'html5lib')
-        data = json.loads(soup.text)
-        try:
-            nav_price = data['Data'][0]['S']['OFDY901035'].split('|')[0]
-        except:
-            pass
-        try:
-            date = data['Data'][0]['S']['OFDY901035'].split('|')[1]
-            if datetime.strptime(date,'%Y-%m-%d').date() > datetime.now().date() - timedelta(days=10):
-                nav_date = datetime.strftime(datetime.strptime(date,'%Y-%m-%d'),'%Y-%m-%d')
-        except:
-            pass
-        
-        if nav_price != '' and nav_date != '':
-            row = [master_id,isin,round(eval(nav_price),2),nav_date]
-            write_output(row)
-            return 0
-        else:
-            continue
-    f = open(non_scraped_isin_file, 'a')
-    f.write(f'{isin}\n')
-    f.close()
-    return 0
+    isin = lst[0]
+    master_id = lst[1]
+    url = lst[2]
+    res = session.get(url,headers=header)
+    soup = BeautifulSoup(res.text,'html5lib')
+    data = json.loads(soup.text)
+    if data['Data'] == []:
+        return 0
+    try:
+        nav_price = data['Data'][0]['S']['OFDY901035'].split('|')[0]
+    except:
+        pass
 
-def isin_downloaded():
-    isin_downloaded = []
-    with open(output_file,"r") as file:
-        csvreader = csv.reader(file)
-        header = next(csvreader)
-        for row in csvreader:
-            isin_downloaded.append(row[1])
-    return isin_downloaded
+    try:
+        date = data['Data'][0]['S']['OFDY901035'].split('|')[1]
+        if datetime.strptime(date,'%Y-%m-%d').date() > datetime.now().date() - timedelta(days=10):
+            nav_date = datetime.strftime(datetime.strptime(date,'%Y-%m-%d'),'%Y-%m-%d')
+    except:
+        pass
+    
+    if nav_price != '' and nav_date != '':
+        row = [master_id,isin,round(eval(nav_price),2),nav_date]
+        with open(output_file,"a",newline="") as file:
+            writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
+            writer.writerow(row)
+        return 0
+    else:
+        f = open(non_scraped_isin_file, 'a')
+        f.write(f'{isin}\n')
+        f.close()
+        return 0
 
 def start_fundinfo_priv_scraper(case):
+    data_lst = []
     csv_filter()
-    downloaded_isin = isin_downloaded()
+    downloaded_isin = pd.read_csv(output_file)['isin name'].values.tolist()
     header = get_header()
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['Master ID'])
@@ -154,13 +145,23 @@ def start_fundinfo_priv_scraper(case):
         for i,row in df.iterrows():
             isin = row[0]
             master_id = row[2]
-            priv_investor_scraper(header,isin,master_id)
+            for country in ['LU','SG','HK','CH','GB','IE','DE','SE']:
+                url = f'https://fundinfo.com/en/{country}-priv/LandingPage/Data?skip=0&query={isin}&orderdirection='
+                lst = [isin,master_id,url]
+                data_lst.append(lst)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as link_executor:
+            [link_executor.submit(priv_investor_scraper,header,lst) for lst in data_lst]
     if case == 2:
         df = df[df['Symbol'].str.contains('SG')]
         for i,row in df.iterrows():
             isin = row[0]
             master_id = row[2]
-            priv_investor_scraper(header,isin,master_id)
+            for country in ['LU','SG','HK','CH','GB','IE','DE','SE']:
+                url = f'https://fundinfo.com/en/{country}-priv/LandingPage/Data?skip=0&query={isin}&orderdirection='
+                lst = [isin,master_id,url]
+                data_lst.append(lst)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as link_executor:
+            [link_executor.submit(priv_investor_scraper,header,lst) for lst in data_lst]
     df = csv_filter()
     # db_insert(df)
             

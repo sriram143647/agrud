@@ -1,3 +1,4 @@
+from doctest import master
 from email import header
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
@@ -9,6 +10,7 @@ import numpy as np
 import pandas as pd
 import requests
 import os
+import concurrent.futures
 session = requests.session()
 domain = os.getcwd().split('\\')[-1].replace(' ','_')
 output_file = f"{domain}_data.csv"
@@ -73,11 +75,6 @@ def write_header():
         writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
         writer.writerow(['master id','isin name','price','date'])
 
-def write_output(data):
-    with open(output_file,"a",newline="") as file:
-        writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
-        writer.writerow(data)
-
 def csv_filter():
     filtered_df = pd.DataFrame()
     unique_isin = []
@@ -99,10 +96,13 @@ def csv_filter():
     except:
         pass
     
-def markets_ft_scraper(header,isin,master_id,curr):
+def markets_ft_scraper(header,lst):
     nav_price = ''
     nav_date = ''
-    url = f'https://markets.ft.com/data/funds/tearsheet/summary?s={isin}:{curr}'
+    isin = lst[0]
+    master_id = lst[1]
+    url = lst[2]
+    # url = f'https://markets.ft.com/data/funds/tearsheet/summary?s={isin}:{curr}'
     res = session.get(url,headers=header)
     soup = BeautifulSoup(res.text,'html5lib')
     try:
@@ -126,27 +126,21 @@ def markets_ft_scraper(header,isin,master_id,curr):
         pass    
     if nav_price != '' and nav_date != '':
         row = [master_id,isin,round(eval(nav_price),2),nav_date]
-        write_output(row)
+        with open(output_file,"a",newline="") as file:
+            writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
+            writer.writerow(row)
         return 0
     else:
-        f = open(non_scraped_isin_file, 'a')
-        f.write(f'{isin}\n')
-        f.close()
+        # f = open(non_scraped_isin_file, 'a')
+        # f.write(f'{isin}\n')
+        # f.close()
         return 0
 
-def isin_downloaded():
-    isin_downloaded = []
-    with open(output_file,"r") as file:
-        csvreader = csv.reader(file)
-        header = next(csvreader)
-        for row in csvreader:
-            isin_downloaded.append(row[1])
-    return isin_downloaded
-
 def start_markets_ft_scraper():
+    data_lst= []
     csv_filter()
+    downloaded_isin = pd.read_csv(output_file)['isin name'].values.tolist()
     header = get_header()
-    downloaded_isin = isin_downloaded()
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['Master ID'])
     df = df[df['Currency'].notna()]
@@ -155,7 +149,12 @@ def start_markets_ft_scraper():
         isin = row[0]
         curr = row[1]
         master_id = row[2]
-        markets_ft_scraper(header,isin,master_id,curr)
+        url = f'https://markets.ft.com/data/funds/tearsheet/summary?s={isin}:{curr}'
+        lst = [isin,master_id,url]
+        data_lst.append(lst)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as link_executor:
+        [link_executor.submit(markets_ft_scraper,header,lst) for lst in data_lst]
+        
     df = csv_filter()
     # db_insert(df)
 

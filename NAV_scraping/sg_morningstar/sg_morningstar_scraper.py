@@ -11,6 +11,7 @@ import numpy as np
 import os
 import requests
 import pymysql
+import concurrent.futures
 session = requests.session()
 domain = os.getcwd().split('\\')[-1].replace(' ','_')
 output_file = f"{domain}_data.csv"
@@ -106,11 +107,6 @@ def write_header():
         writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
         writer.writerow(['master id','isin name','price','date'])
 
-def write_output(data):
-    with open(output_file,"a",newline="") as file:
-        writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
-        writer.writerow(data)
-
 def csv_filter():
     filtered_df = pd.DataFrame()
     unique_isin = []
@@ -132,21 +128,12 @@ def csv_filter():
     except:
         pass
 
-def morningstar_gen_case(api_header,header,isin, master_id):
+def morningstar_gen_case(api_header,lst):
     nav_price = ''
     nav_date = ''
-    now = datetime.now()
-    tm_stamp = int(datetime.timestamp(now))
-    url = f'https://sg.morningstar.com/sg/util/SecuritySearch.ashx?source=nav&moduleId=6&ifIncludeAds=True&usrtType=v&q={isin}&limit=100&timestamp={tm_stamp}'
-    res = session.get(url,headers=header)
-    soup = BeautifulSoup(res.text,'html5lib')
-    try:
-        data = soup.text.split('|||')[1].split('|')[1]
-    except:
-        return 0
-    j_data = json.loads(data)
-    i_token =  j_data['i']
-    api_url = f"https://www.us-api.morningstar.com/sal/sal-service/fund/quote/realTime/{i_token}/data?secExchangeList=null&random=0.42294477494679383&languageId=en&locale=en&clientId=MDC_intl&benchmarkId=mstarorcat&component=sal-components-mip-quote&version=3.60.0"
+    isin = lst[0]
+    master_id = lst[1]
+    api_url = lst[2]
     res2 = session.get(api_url,headers = api_header)
     j_data2 = json.loads(res2.text)
     try:
@@ -165,26 +152,20 @@ def morningstar_gen_case(api_header,header,isin, master_id):
         pass
     if nav_price != '' and nav_date != '':
         row = [master_id,isin,round(nav_price,2),nav_date]
-        write_output(row)
+        with open(output_file,"a",newline="") as file:
+            writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
+            writer.writerow(row)
         return 0
     else:
-        f = open(non_scraped_isin_file, 'a')
-        f.write(f'{isin}\n')
-        f.close()
+        # f = open(non_scraped_isin_file, 'a')
+        # f.write(f'{isin}\n')
+        # f.close()
         return 0
 
-def isin_downloaded():
-    isin_downloaded = []
-    with open(output_file,"r") as file:
-        csvreader = csv.reader(file)
-        header = next(csvreader)
-        for row in csvreader:
-            isin_downloaded.append(row[1])
-    return isin_downloaded
-
 def start_sg_morningstar_scraper():
+    data_lst = []
     csv_filter()
-    downloaded_isin = isin_downloaded()
+    downloaded_isin = pd.read_csv(output_file)['isin name'].values.tolist()
     header,api_header = get_headers()
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['Master ID'])
@@ -193,15 +174,25 @@ def start_sg_morningstar_scraper():
     for i,row in df.iterrows():
         isin = row[0]
         master_id = row[2]
-        morningstar_gen_case(api_header,header,isin,master_id)
+        now = datetime.now()
+        tm_stamp = int(datetime.timestamp(now))
+        url = f'https://sg.morningstar.com/sg/util/SecuritySearch.ashx?source=nav&moduleId=6&ifIncludeAds=True&usrtType=v&q={isin}&limit=100&timestamp={tm_stamp}'
+        res = session.get(url,headers=header)
+        soup = BeautifulSoup(res.text,'html5lib')
+        try:
+            data = soup.text.split('|||')[1].split('|')[1]
+        except:
+            continue
+        j_data = json.loads(data)
+        i_token =  j_data['i']
+        api_url = f"https://www.us-api.morningstar.com/sal/sal-service/fund/quote/realTime/{i_token}/data?secExchangeList=null&random=0.42294477494679383&languageId=en&locale=en&clientId=MDC_intl&benchmarkId=mstarorcat&component=sal-components-mip-quote&version=3.60.0"
+        lst = [isin,master_id,api_url]
+        data_lst.append(lst)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as link_executor:
+        [link_executor.submit(morningstar_gen_case,api_header,lst) for lst in data_lst]
     df = csv_filter()
     # db_insert(df)
 
 
 if __name__ == '__main__':
     start_sg_morningstar_scraper()
-    # master_id = '140871'
-    # isin = 'GB0000796242'
-    # header,api_header = get_headers()
-    # morningstar_gen_case(api_header,header,isin, master_id)
-

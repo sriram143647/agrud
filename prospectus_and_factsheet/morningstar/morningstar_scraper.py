@@ -1,4 +1,6 @@
+from asyncio import futures
 from datetime import datetime
+from doctest import master
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -12,6 +14,7 @@ import numpy as np
 from bs4 import BeautifulSoup
 from datetime import datetime
 import os
+import concurrent.futures
 session = requests.session()
 client_user = 'phillipssec'
 client_pass = '52c4533bcc966857'
@@ -27,11 +30,6 @@ def write_header():
     with open(output_file,"a",newline="") as file:
         writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
         writer.writerow(['master id','isin name','factsheet link','prospectus link'])
-
-def write_output(data):
-    with open(output_file,"a",newline="") as file:
-        writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
-        writer.writerow(data)
 
 def get_driver():
     s=Service(ChromeDriverManager().install())
@@ -110,67 +108,62 @@ def get_header():
     }
     return header
 
-def isin_downloaded():
-    isin_downloaded = []
-    with open(output_file,"r") as file:
-        csvreader = csv.reader(file)
-        header = next(csvreader)
-        for row in csvreader:
-            isin_downloaded.append(row[1])
-    return isin_downloaded
-
-def get_isin_url(header,isin):
+def get_isin_url(header,isin,master_id):
     tm_stmp = datetime.timestamp(datetime.now())
     url = f'https://doc.morningstar.com/ajaxService/AutoComplete.aspx?q={isin}&limit=150&timestamp={int(tm_stmp)}'
     res = session.get(url,headers=header)
     if res.text != '':
         investment_id =  res.text.replace('\r','').replace('\n','').split('|')[-2]
         main_url = f'https://doc.morningstar.com/dochistory.aspx?secid={investment_id}'
-        return main_url
-    else:
-        main_url = ''
-        return main_url
+        return [isin,master_id,main_url]
 
-def morningstar_gen_case(header,main_url,isin,master_id):
+def morningstar_gen_case(header,lst):
     factsheet_link = ''
     prospectus_link = ''
-    
+    isin = lst[0]
+    master_id = lst[1]
+    main_url = lst[2]
     res = session.get(main_url,headers=header)
     soup = BeautifulSoup(res.text,'html5lib')
-    try:
-        rows = soup.find('table',{'id':'listContentBox'}).find_all('tr')
-        for row in rows:
-            try:
-                if 'factsheet' == row.find('label').text.lower() and 'english' == row.find('td',{'class':'language'}).text.lower():
-                    if factsheet_link == '':
-                        factsheet_link = 'https://doc.morningstar.com/'+row.find('a',{'class':'g-pdf-icon g-vv'}).get('href')
-                if 'prospectus' == row.find('label').text.lower() and 'english' == row.find('td',{'class':'language'}).text.lower():
-                    if prospectus_link == '':
-                        prospectus_link = 'https://doc.morningstar.com/'+row.find('a',{'class':'g-pdf-icon g-vv'}).get('href')
-                if factsheet_link != '' and prospectus_link != '':
-                    break
-            except:
-                continue
-    except:
-        pass
+    for table in soup.find('table',{'id':'listContentBox'}).find_all('tbody'):
+        if 'factsheet' in table.text.lower():
+            rows = table.find_all('tr')
+            for row in rows:
+                try:
+                    if 'factsheet' == row.find('label').text.lower() and 'english' == row.find('td',{'class':'language'}).text.lower():
+                        if factsheet_link == '':
+                            factsheet_link = 'https://doc.morningstar.com/'+row.find('a',{'class':'g-pdf-icon g-vv'}).get('href')
+                except:
+                    continue
+        if 'prospectus' in table.text.lower():
+            rows = table.find_all('tr')
+            for row in rows:
+                try:
+                    if 'prospectus' == row.find('label').text.lower() and 'english' == row.find('td',{'class':'language'}).text.lower():
+                        if prospectus_link == '':
+                            prospectus_link = 'https://doc.morningstar.com/'+row.find('a',{'class':'g-pdf-icon g-vv'}).get('href')
+                except:
+                    continue
     row = [master_id,isin,factsheet_link,prospectus_link]
-    write_output(row)
+    with open(output_file,"a",newline="") as file:
+        writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
+        writer.writerow(row)
     return 0
     
 def start_morningstar_scraper():
+    data_lst= []
     csv_filter()
-    downloaded_isin = isin_downloaded()
+    downloaded_isin = pd.read_csv(output_file)['isin name'].values.tolist()
     header = get_header()
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['master_id'])
     df = df[~df['symbol'].isin(downloaded_isin)]
-    for i,row in df.iterrows():
-        isin = row[3]
-        master_id = row[0]
-        main_url = get_isin_url(header,isin)
-        if main_url == '':
-            continue
-        morningstar_gen_case(header,main_url,isin,master_id)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as link_executor:
+        future_list = [link_executor.submit(get_isin_url,header,row[3],row[0]) for i,row in df.iterrows()]
+        for f in concurrent.futures.as_completed(future_list):
+            data_lst.append(f.result())
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as link_executor:
+        [link_executor.submit(morningstar_gen_case,header,lst) for lst in data_lst]
     csv_filter()
             
 if __name__ == '__main__':

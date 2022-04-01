@@ -9,9 +9,9 @@ import fundinfo.fundinfo_professional_investor_scraper as prof_fundinfo
 import sg_morningstar.sg_morningstar_scraper as morningstar
 import pandas as pd
 import smtplib,ssl
-import multiprocessing
 import time
 import os
+import csv
 import logging as log
 # file_path = '/home/ubuntu/rentech/nav_scraping/'
 file_path = r'D:\\sriram\\agrud\\NAV_scraping\\server_files\\'
@@ -25,7 +25,7 @@ my_log = log.getLogger()
 def send_email(row_count=0,status=None,err_text=None):
     sender_email = 'agrud.scrapersmail123@gmail.com'
     email_password = 'qwerty@123'
-    receivers_email_list = ["prince.chaturvedi@agrud.com","sayan.sinharoy@agrud.com","soumodip.pramanik@agrud.com","vidyut.lakhotia@agrud.com"]
+    receivers_email_list = ["prince.chaturvedi@agrud.com","sayan.sinharoy@agrud.com","soumodip.pramanik@agrud.com","vidyut.lakhotia@agrud.com","bhavesh.bansal@agrud.com","jayati.kayet@agrud.com"]
     subject = f"Nav Scraping data ingestion: {datetime.today().strftime('%Y-%m-%d %H:%M:%S')}"
     msg = MIMEMultipart()
     msg['From'] = sender_email
@@ -60,7 +60,7 @@ def db_insert(df):
         rows = cursor.rowcount
         my_log.info(f'{rows} rows inserted')
         db_conn.commit()
-        send_email(row_count=rows,status='success')
+        send_email(row_count=rows,status='success') 
     except Exception as e:
         pass
         my_log.info(f'Exception: {e}')
@@ -133,18 +133,12 @@ def morningstar_func():
     morningstar.start_sg_morningstar_scraper()
     my_log.info(f'{datetime.now()} morningstar scraping ended')
 
-def task1():
-    market_ft_func()
-    fundsquare_func()
-    priv_fundinfo_func()
-    prof_fundinfo_func()
-        
-
-def task2():
-    morningstar_func()
-    priv_fundinfo_func()
-    prof_fundinfo_func()
-
+def non_scraped_isin():
+    downloaded_isin = pd.read_csv(output_file)['isin name'].values.tolist()
+    df = pd.read_csv(data_file,encoding="utf-8")
+    df = df[~df['Symbol'].isin(downloaded_isin)]
+    df.to_csv(non_scraped_isin_file,encoding='utf-8',index=False,header=None)
+    
 def start():
     my_log.info(f'-------------------start time: {datetime.now()}-------------------')
     # files deletion
@@ -162,25 +156,16 @@ def start():
         os.remove(log_file)
     except:
         pass
-
-    # process 1
-    p1 = multiprocessing.Process(target=task1)
-    p1.start()
-
-    # process 2
-    p2 = multiprocessing.Process(target=task2)
-    p2.start()
-
-    # process join
-    p1.join()
-    p2.join()
-
-    # drop duplicate isin
-    time.sleep(10)
-    df = pd.read_csv(non_scraped_isin_file,encoding='utf-8',header=None)
-    df = df.drop_duplicates()
-    df.to_csv(non_scraped_isin_file,encoding='utf-8',index=False,header=None)
-    time.sleep(5)
+    
+    # scraper tasks
+    my_log.info('task started')
+    market_ft_func()
+    fundsquare_func()
+    morningstar_func()
+    priv_fundinfo_func()
+    prof_fundinfo_func()
+    non_scraped_isin()
+    my_log.info('task ended')
 
     # db insertion
     df = pd.read_csv(output_file,encoding='utf-8')

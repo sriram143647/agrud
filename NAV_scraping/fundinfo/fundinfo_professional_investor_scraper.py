@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 from bs4 import BeautifulSoup
 import os
-import pymysql.cursors
+import concurrent.futures
 session = requests.session()
 domain = os.getcwd().split('\\')[-1].replace(' ','_')
 output_file = f"{domain}_data.csv"
@@ -134,18 +134,10 @@ def prof_investor_scraper(header,isin,master_id):
     f.close()
     return 0
 
-def isin_downloaded():
-    isin_downloaded = []
-    with open(output_file,"r") as file:
-        csvreader = csv.reader(file)
-        header = next(csvreader)
-        for row in csvreader:
-            isin_downloaded.append(row[1])
-    return isin_downloaded
-
 def start_fundinfo_prof_scraper(case):
+    data_lst = []
     csv_filter()
-    downloaded_isin = isin_downloaded()
+    downloaded_isin = pd.read_csv(output_file)['isin name'].values.tolist()
     header = get_header()
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['Master ID'])
@@ -154,13 +146,23 @@ def start_fundinfo_prof_scraper(case):
         for i,row in df.iterrows():
             isin = row[0]
             master_id = row[2]
-            prof_investor_scraper(header,isin,master_id)
+            for country in ['LU','SG','HK','CH','GB','IE','DE','SE']:
+                url = f'https://fundinfo.com/en/{country}-prof/LandingPage/Data?skip=0&query={isin}&orderdirection='
+                lst = [isin,master_id,url]
+                data_lst.append(lst)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as link_executor:
+            [link_executor.submit(prof_investor_scraper,header,lst) for lst in data_lst]
     if case == 2:
         df = df[df['Symbol'].str.contains('SG')]
         for i,row in df.iterrows():
             isin = row[0]
             master_id = row[2]
-            prof_investor_scraper(header,isin,master_id)
+            for country in ['LU','SG','HK','CH','GB','IE','DE','SE']:
+                url = f'https://fundinfo.com/en/{country}-prof/LandingPage/Data?skip=0&query={isin}&orderdirection='
+                lst = [isin,master_id,url]
+                data_lst.append(lst)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as link_executor:
+            [link_executor.submit(prof_investor_scraper,header,lst) for lst in data_lst]
     df = csv_filter()
     # db_insert(df)
             

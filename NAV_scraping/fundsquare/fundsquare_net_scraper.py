@@ -8,6 +8,7 @@ import numpy as np
 import requests
 import os
 import csv
+import concurrent.futures
 session = requests.session()
 domain = os.getcwd().split('\\')[-1].replace(' ','_')
 output_file = f"{domain}_data.csv"
@@ -73,11 +74,6 @@ def write_header():
         writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
         writer.writerow(['master id','isin name','price','date'])
 
-def write_output(data):
-    with open(output_file,"a",newline="") as file:
-        writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
-        writer.writerow(data)
-
 def csv_filter():
     filtered_df = pd.DataFrame()
     unique_isin = []
@@ -99,16 +95,19 @@ def csv_filter():
     except:
         pass
 
-def fundsquare_scraper(header,isin,master_id):
+def fundsquare_scraper(header,lst):
     nav_price = ''
     nav_date = ''
-    url = f'https://www.fundsquare.net/search-results?ajaxContentView=renderContent&=undefined&search={isin}&isISIN=O&lang=EN&fastSearch=O'
+    isin = lst[0]
+    master_id = lst[1]
+    url = lst[2]
     res = session.get(url,headers=header)
     soup = BeautifulSoup(res.text,'html5lib')
     try:
         pts = soup.find('table',{'width':'85%'}).find_all('td')
     except:
         pass
+
     try:
         for pt in pts:
             try:
@@ -128,28 +127,23 @@ def fundsquare_scraper(header,isin,master_id):
                 pass
     except:
         pass
+    
     if nav_price != '' and nav_date != '':
         row = [master_id,isin,round(eval(nav_price),2),nav_date]
-        write_output(row)
+        with open(output_file,"a",newline="") as file:
+            writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
+            writer.writerow(row)
         return 0
     else:
-        f = open(non_scraped_isin_file, 'a')
-        f.write(f'{isin}\n')
-        f.close()
+        # f = open(non_scraped_isin_file, 'a')
+        # f.write(f'{isin}\n')
+        # f.close()
         return 0
 
-def isin_downloaded():
-    isin_downloaded = []
-    with open(output_file,"r") as file:
-        csvreader = csv.reader(file)
-        header = next(csvreader)
-        for row in csvreader:
-            isin_downloaded.append(row[1])
-    return isin_downloaded
-
 def start_fundsquare_scraper():
+    data_lst= []
     csv_filter()
-    downloaded_isin = isin_downloaded()
+    downloaded_isin = pd.read_csv(output_file)['isin name'].values.tolist()
     header = get_header()
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['Master ID'])
@@ -157,7 +151,11 @@ def start_fundsquare_scraper():
     for i,row in df.iterrows():
         isin = row[0]
         master_id = row[2]
-        fundsquare_scraper(header,isin,master_id)
+        url = f'https://www.fundsquare.net/search-results?ajaxContentView=renderContent&=undefined&search={isin}&isISIN=O&lang=EN&fastSearch=O'
+        lst = [isin,master_id,url]
+        data_lst.append(lst)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as link_executor:
+        [link_executor.submit(fundsquare_scraper,header,lst) for lst in data_lst]
     df = csv_filter()
     # db_insert(df)
 

@@ -1,3 +1,4 @@
+from datetime import datetime
 import fundinfo.fundinfo_private_investor_scraper as priv_fundinfo
 import fundinfo.fundinfo_professional_investor_scraper as prof_fundinfo
 import morningstar.morningstar_scraper as morningstar
@@ -8,25 +9,27 @@ data_file = file_path+'Global _MF_Factsheet_Prospectus - FINAL GLOBAL MF LIST.cs
 output_file = file_path+'scraped_data_links.csv'
 
 def start_scrapers():
+    print(f'start time {datetime.now()}')
     morningstar.data_file = data_file
     morningstar.output_file = output_file
     morningstar.start_morningstar_scraper()
 
-    priv_fundinfo.data_file = data_file
-    priv_fundinfo.output_file = output_file
-    priv_fundinfo.start_fundinfo_priv_scraper()
+    # priv_fundinfo.data_file = data_file
+    # priv_fundinfo.output_file = output_file
+    # priv_fundinfo.start_fundinfo_priv_scraper()
 
-    prof_fundinfo.data_file = data_file
-    prof_fundinfo.output_file = output_file
-    prof_fundinfo.start_fundinfo_prof_scraper()
+    # prof_fundinfo.data_file = data_file
+    # prof_fundinfo.output_file = output_file
+    # prof_fundinfo.start_fundinfo_prof_scraper()
 
-    moneycontroller.data_file = data_file
-    moneycontroller.output_file = output_file
-    moneycontroller.start_moneycontroller_scraper()
+    # moneycontroller.data_file = data_file
+    # moneycontroller.output_file = output_file
+    # moneycontroller.start_moneycontroller_scraper()
 
-    fundsingapore.data_file = data_file
-    fundsingapore.output_file = output_file
-    fundsingapore.start_fundsingapore_scraper()
+    # fundsingapore.data_file = data_file
+    # fundsingapore.output_file = output_file
+    # fundsingapore.start_fundsingapore_scraper()
+    print(f'end time {datetime.now()}')
 
 if __name__ == '__main__':
     start_scrapers()
