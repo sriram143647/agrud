@@ -111,11 +111,11 @@ def lambda_handler(event, context=''):
         soup = BeautifulSoup(driver.page_source, 'html5lib')
 
         driver.quit()
-        print('page_url', page_url)
+        print('page_url:', page_url)
 
-        print('coin', Symbol)
+        print('coin:', Symbol)
 
-        print(master_id)
+        print('master id:', master_id)
 
         # date
         try:
@@ -126,13 +126,11 @@ def lambda_handler(event, context=''):
             except Exception as e:
                 print('Error while scraping symbol {} Error: {}'.format(Symbol,e))
                 continue
-        print("******************************************************", site_date)
         site_date = site_date.split(" ")
         site_date = site_date[-2].replace('/', '-')
         site_date = datetime.strptime(site_date, '%m-%d-%Y').strftime('%Y-%m-%d')
+        print("site date:", site_date)
         
-        # site_date
-        print(site_date)
 
         TIME = "00:00:00"
 
@@ -149,7 +147,7 @@ def lambda_handler(event, context=''):
         else:
             if Symbol == "COINETH:SS" or Symbol == "COINXBT:SS" or Symbol == "BTCE:GR" or Symbol == "3072:HK" or Symbol == "COINXBE:SS" or Symbol == "CYB:SP":
                 main_map[master_id]["indicators"]["348"] = {"value_data": ytd, "json_data": None}
-                print('ytd', ytd)
+                print('ytd:', ytd)
 
         # 1yr
         one_year = soup.find_all('span', {'class': 'fieldValue__5149a11475'})[3].text.replace('--', "0")
@@ -158,9 +156,8 @@ def lambda_handler(event, context=''):
             pass
         else:
             if Symbol == "COINETH:SS" or Symbol == "COINXBT:SS" or Symbol == "BTCE:GR" or Symbol == "3072:HK" or Symbol == "COINXBE:SS" or Symbol == "CYB:SP":
-                main_map[master_id]["indicators"]["7"] = {
-                    "value_data": one_year, "json_data": None}
-                print('1year', one_year)
+                main_map[master_id]["indicators"]["7"] = {"value_data": one_year, "json_data": None}
+                print('1year:', one_year)
 
         # 3yr
         three_year = soup.find_all('span', {'class': 'fieldValue__5149a11475'})[4].text.replace('--', "0")
@@ -170,7 +167,7 @@ def lambda_handler(event, context=''):
         else:
             if Symbol == "COINETH:SS" or Symbol == "COINXBT:SS" or Symbol == "BTCE:GR" or Symbol == "3072:HK" or Symbol == "COINXBE:SS" or Symbol == "CYB:SP":
                 main_map[master_id]["indicators"]["8"] = {"value_data": three_year, "json_data": None}
-                print('3year', three_year)
+                print('3year:', three_year)
 
         # 5yr
         five_year = soup.find_all('span', {'class': 'fieldValue__5149a11475'})[5].text.replace('--', "0")
@@ -179,9 +176,8 @@ def lambda_handler(event, context=''):
             pass
         else:
             if Symbol == "COINETH:SS" or Symbol == "COINXBT:SS" or Symbol == "BTCE:GR" or Symbol == "3072:HK" or Symbol == "COINXBE:SS" or Symbol == "CYB:SP":
-                main_map[master_id]["indicators"]["9"] = {
-                    "value_data": five_year, "json_data": None}
-                print('5year', five_year)
+                main_map[master_id]["indicators"]["9"] = {"value_data": five_year, "json_data": None}
+                print('5year:', five_year)
 
         # total assets
         total = soup.find_all('span', {'class': 'fieldLabel__a284a93b14'})[7].text
@@ -189,7 +185,7 @@ def lambda_handler(event, context=''):
             total_assets = soup.find_all('span', {'class': 'fieldValue__5149a11475'})[7].text.replace(',', '')
             total_assets = float(total_assets)
             total_assets = total_assets*1000000
-            print('total assets', total_assets)
+
         if re.findall("\([B]", total):
             total_assets = soup.find_all('span', {'class': 'fieldValue__5149a11475'})[7].text.replace(',', '')
             total_assets = float(total_assets)
@@ -199,24 +195,25 @@ def lambda_handler(event, context=''):
             total_assets = soup.find_all('span', {'class': 'fieldValue__5149a11475'})[7].text.replace(',', '')
             total_assets = float(total_assets)
             total_assets = total_assets*1000000000000
-
+        
         if total_assets == "--":
             pass
         else:
             if Symbol == "COINETH:SS" or Symbol == "COINXBT:SS" or Symbol == "BTCE:GR" or Symbol == "3072:HK" or Symbol == "COINXBE:SS" or Symbol == "CYB:SP":
                 main_map[master_id]["indicators"]["29"] = {"value_data": str(total_assets).split(".")[0], "json_data": None}
-
+                print('total assets: ', total_assets)
+        
         # expense ratio
         expense_ratio = soup.find_all('span', {'class': 'fieldValue__5149a11475'})[-1].text
         expense_ratio = expense_ratio.split('%')[0]
         expense_ratio = float(expense_ratio)
         expense_ratio = expense_ratio/100
-
+        
         if expense_ratio == "--":
             pass
         else:
             main_map[master_id]["indicators"]["13"] = {"value_data": expense_ratio, "json_data": None}
-        
+            print('expense ratio',expense_ratio)
         resultset = []
         for ind in list(main_map[master_id]['indicators'].keys()):
             value = main_map[master_id]['indicators'][str(ind)]['value_data']
@@ -225,7 +222,7 @@ def lambda_handler(event, context=''):
             ts_date = site_date
             result = [master_id,ind,value,json_data,datatype,ts_date]
             resultset.append(result)
-        db_insert(resultset)
+        # db_insert(resultset)
 
 # all event
 all_event = {

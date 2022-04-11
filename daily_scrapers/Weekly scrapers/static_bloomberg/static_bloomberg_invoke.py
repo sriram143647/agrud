@@ -6,12 +6,8 @@ import time
 from datetime import timedelta, date
 import mysql.connector
 import logging as log
-from static_bloomberg_lambda import lambda_handler
-#server paths
-# log_file_path = '/home/ubuntu/agrud-scrapers/weekly_run/static_bloomberg/scraper_run_log.txt'
-
-#local paths
-log_file_path = r'D:\\sriram\\agrud\\daily_scrapers\\Weekly scrapers\\static_bloomberg\\scraper_run_log.txt'
+# server paths
+log_file_path = '/home/ubuntu/agrud-scrapers/weekly_run/static_bloomberg/scraper_run_log.txt'
 log.basicConfig(filename = log_file_path,filemode='a',level=log.INFO)
 my_log = log.getLogger()
 

@@ -17,21 +17,16 @@ import mysql.connector
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import smtplib
-import time
 import mysql.connector.pooling
 import mysql.connector
 from mysql.connector import Error
-from mysql.connector.connection import MySQLConnection
-from mysql.connector import pooling
 from decimal import Decimal
-import traceback
 subprocess.call("sudo rm -rf /tmp/*",shell = True)
 import logging as log
 #server paths
-# log_file_path = '/home/ubuntu/agrud-scrapers/daily_run/valueresearch/scraper_run_log.txt'
-# firefox_profile_path = '/home/ubuntu/agrud-scrapers/tor-browser_en-US/Browser/TorBrowser/Data/Browser/profile.default/'
-# driver_path = '/home/ubuntu/agrud-scrapers/geckodriver'
-log_file_path = r'D:\\sriram\\agrud\\daily_scrapers\\Daily Run\\scraper_rrun_log.txt'
+log_file_path = '/home/ubuntu/agrud-scrapers/daily_run/valueresearch/scraper_run_log.txt'
+firefox_profile_path = '/home/ubuntu/agrud-scrapers/tor-browser_en-US/Browser/TorBrowser/Data/Browser/profile.default/'
+driver_path = '/home/ubuntu/agrud-scrapers/geckodriver'
 log.basicConfig(filename = log_file_path,filemode='a',level=log.INFO)
 my_log = log.getLogger()
 
@@ -72,16 +67,18 @@ def fetch_data(src_list,master,source_map):
             firefox_options.add_argument("--headless")
             driver = webdriver.Firefox(executable_path = driver_path, options = firefox_options)
 
-            my_log.info(site_url)
+            my_log.info(f"site url:{site_url}")
             driver.get(site_url)
             # my_log.info(driver.page_source)
             wait = WebDriverWait(driver,20)
-            try:
-                site_date = wait.until(EC.visibility_of_element_located((By.XPATH,'//*[@id="trailing-returns-percentage"]/div/p[2]/small'))).text
-            except:
-                site_date = wait.until(EC.visibility_of_element_located((By.XPATH,'//*[@id="trailing-returns-as-on-date"]/small'))).text
-            site_date = site_date.split(" ")[-1]
-            site_date = datetime.datetime.strptime(site_date, '%d-%b-%Y').strftime('%Y-%m-%d')
+            # try:
+            #     site_date = wait.until(EC.visibility_of_element_located((By.XPATH,'//*[@id="trailing-returns-percentage"]/div/p[2]/small'))).text
+            # except:
+            #     site_date = wait.until(EC.visibility_of_element_located((By.XPATH,'//*[@id="trailing-returns-as-on-date"]/small'))).text
+            # site_date = site_date.split(" ")[-1]
+            # site_date = datetime.datetime.strptime(site_date, '%d-%b-%Y').strftime('%Y-%m-%d')
+            site_date = '2022-03-31'
+	        
             my_log.info(site_date)
             if master__id not in main_map:
                 main_map[master__id] = {}
@@ -93,6 +90,7 @@ def fetch_data(src_list,master,source_map):
             main_map[master__id]["indicators"] = {}
             
             my_log.info(master__id)
+            my_log.info("----------------------------------------------------------------------")
             total_asset = wait.until(EC.visibility_of_element_located((By.XPATH,'//*[@id="basic-investment-table"]/tbody/tr[7]/td[2]'))).text
             if total_asset == "--":
                 total_asset = ""
@@ -101,7 +99,6 @@ def fetch_data(src_list,master,source_map):
                 total_asset = total_asset.replace(",","")
                 total_asset = Decimal(total_asset)*Decimal(10000000)
             total_asset = str(total_asset)
-            my_log.info("----------------------------------------------------------------------")
             # my_log.info("total asset 29",total_asset)
 
             for indicator_id  in source_map[master__id]:
@@ -223,7 +220,6 @@ if __name__ == "__main__":
     except Exception as e:
         my_log.setLevel(log.ERROR)
         my_log.error(f'Error:{e}',exc_info=True)
-        error_stack = ''.join(traceback.format_stack()).strip()
-        send_email(status='Fail',text=str(e)+'\nerror stacktrace:\n'+error_stack)
+        send_email(status='Fail',text=str(e))
     my_log.setLevel(log.INFO)
     my_log.info(f'----------------------finished at:{datetime.datetime.now()}----------------------------')

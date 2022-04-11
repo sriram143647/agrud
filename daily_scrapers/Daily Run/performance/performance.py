@@ -59,6 +59,7 @@ def fetch_data(src_ids,master_ids,source_map):
         site_url = "https://www.morningstar.com/" + source_id + "/quote"
         my_log.info(f'portfolio url: {portfolio_url}')
         my_log.info(f'site url: {site_url}')
+        my_log.info(master_id)
         try:
             for _ in range(3):
                 try:
@@ -83,11 +84,10 @@ def fetch_data(src_ids,master_ids,source_map):
                     retry += 1
                     my_log.info(e)
                     sleep(2)
-            
-            my_log.info(master_id)
+             
             site_date = date_response['asOfDateLastPriceFund'].split("T")[0]
-            s_date = datetime.datetime.strptime(site_date,'%Y-%m-%d') - datetime.timedelta(days=1)
-            site_date = s_date.strftime('%Y-%m-%d')  
+            # s_date = datetime.datetime.strptime(site_date,'%Y-%m-%d') - datetime.timedelta(days=1)
+            # site_date = s_date.strftime('%Y-%m-%d')  
             my_log.info(site_date)
             
             if master_id not in main_map:

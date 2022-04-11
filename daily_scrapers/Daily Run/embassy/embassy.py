@@ -15,8 +15,7 @@ from time import sleep
 import json
 import logging as log
 import traceback
-log_file_path = r'D:\\sriram\\agrud\\daily_scrapers\\Daily Run\\scraper_run_log.txt'
-# log_file_path = '/home/ubuntu/agrud-scrapers/daily_run/embassy/scraper_run_log.txt'
+log_file_path = '/home/ubuntu/agrud-scrapers/daily_run/embassy/scraper_run_log.txt'
 log.basicConfig(filename = log_file_path,filemode='a',level=log.INFO)
 my_log = log.getLogger()
 
@@ -63,7 +62,7 @@ def fetch_data(df_master):
     # s_date = datetime.datetime.strptime(site_date,'%Y-%m-%d') - datetime.timedelta(days=1)
     # site_date = s_date.strftime('%Y-%m-%d')
     my_log.info(site_date)
-
+    my_log.info('-------------------------------------------------------')
     TIME = "00:00:00"
 
     main_map[master__id]["time"] = TIME

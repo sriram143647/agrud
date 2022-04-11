@@ -1,0 +1,14 @@
+INFO:root:----------------------started at:2022-04-11 11:48:32.950512----------------------------
+INFO:root:https://www.bloomberg.com/markets2/api/datastrip/COINETH%3ASS%2CCOINXBT%3ASS%2CBTCE%3AGR%2C3072%3AHK%2CCOINXBE%3ASS%2CCYB%3ASP?locale=en&customTickerList=true
+INFO:WDM:
+
+INFO:WDM:====== WebDriver manager ======
+INFO:WDM:Current google-chrome version is 100.0.4896
+INFO:WDM:Get LATEST chromedriver version for 100.0.4896 google-chrome
+INFO:WDM:Driver [C:\Users\011\.wdm\drivers\chromedriver\win32\100.0.4896.60\chromedriver.exe] found in cache
+INFO:root:Json error has occured
+INFO:root:----------------------finished at:2022-04-11 11:48:45.616437----------------------------
+INFO:root:----------------------started at:2022-04-11 11:51:59.779785----------------------------
+INFO:root:page url: https://www.bloomberg.com/markets2/api/datastrip/COINETH%3ASS%2CCOINXBT%3ASS%2CBTCE%3AGR%2C3072%3AHK%2CCOINXBE%3ASS%2CCYB%3ASP?locale=en&customTickerList=true
+INFO:root:Json error has occured
+INFO:root:----------------------finished at:2022-04-11 11:52:17.764934----------------------------

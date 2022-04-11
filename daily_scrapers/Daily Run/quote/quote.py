@@ -82,15 +82,15 @@ def fetch_data(src_list,master,source_map):
 
             my_log.info(master__id)
             site_date = date_response['asOfDateLastPriceFund'].split("T")[0]
-            s_date = datetime.datetime.strptime(site_date,'%Y-%m-%d') - datetime.timedelta(days=1)
-            site_date = s_date.strftime('%Y-%m-%d')
+            #s_date = datetime.datetime.strptime(site_date,'%Y-%m-%d') - datetime.timedelta(days=1)
+            #site_date = s_date.strftime('%Y-%m-%d')
             my_log.info(site_date)
             # site_date = (datetime.datetime.strptime(site_date, "%Y-%m-%d") + datetime.timedelta(days = -1)).strftime("%Y-%m-%d")
             if master__id not in main_map:
                 main_map[master__id] = {}
 
             TIME = "00:00:00"
-
+            my_log.info('-------------------------------------------------------------')
             main_map[master__id]["time"] = TIME
             main_map[master__id]["date"] = site_date
             main_map[master__id]["indicators"] = {}

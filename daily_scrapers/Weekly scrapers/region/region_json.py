@@ -6,12 +6,17 @@ from mysql.connector import Error
 from mysql.connector.connection import MySQLConnection
 from mysql.connector import pooling
 from bs4 import BeautifulSoup
-# import requests
 from time import sleep
 import requests
 import funcy
 import json
 import re
+import logging as log
+log_file_path = r'D:\\sriram\\agrud\\daily_scrapers\\weekly_run\\region\\scraper_run_log.txt'
+# log_file_path = '/home/ubuntu/rentech/daily_scrapers/weekly_run/region/scraper_run_log.txt'
+log.basicConfig(filename = log_file_path,filemode='a',level=log.INFO)
+my_log = log.getLogger()
+session = requests.session()
 
 
 headers1 = {
@@ -27,9 +32,8 @@ headers = {
 
 mydb = mysql.connector.connect(host='34.67.106.166',database='rentech_db',user='testuser',password='SAdf!AdsWER!@Ew',auth_plugin='mysql_native_password')
 df = pd.read_sql("""
-SELECT *
-FROM web_scraping_masters
-WHERE indicator_id = '742' AND source_name = 'Morningstar' AND (exchange_id != '10' AND exchange_id != '12' AND exchange_id != '11') AND status = 'Y'
+                     SELECT *
+            FROM web_scraping_masters where status =  'Y' and source_name = 'Morningstar' and json_structure_type = 2 and source_indicator_name = 'Region'
             """, con = mydb)
 risk = df[df['url']== 'https://www.morningstar.com/portfolio']
 src_list = risk['source_identifier']
@@ -47,17 +51,14 @@ master = []
 for i in source_map:
     master.append(i)
 src_list = list([i for j, i in enumerate(src_list) if i not in src_list[:j]]) 
-print("master",master)
-# print("src",src_list)
+
 def fetch_data():
-  
     main_map = {}
     for source, master__id in zip(src_list, master):
-        print(master__id)
         portfolio_url = "https://www.morningstar.com/" + source + "/performance"
-        site_url = "https://www.morningstar.com/" + source + "/quote"
+        my_log.info(portfolio_url)
         try:
-            req = requests.get(portfolio_url).text
+            req = session.get(portfolio_url).text
             try :
                 if len(req.split('byId:{"')[1].split('}},')[0].split(',')) > 1:
                     morning_id = req.split('byId:{"')[1].split('":')[1].split(",")[1].split(":")[0]
@@ -70,36 +71,32 @@ def fetch_data():
                         morning_id = str(soup.find_all('script')[5]).split('}},markets')[0].split('byId:{')[1].split(':')[-2].split(',')[-1].replace('"','')
                     except:
                         morning_id = str(soup.find_all('script')[6]).split('}},markets')[0].split('byId:{')[1].split(':')[-2].split(',')[-1].replace('"','')
-                    # print(morning_id)
-                    # print(site_url)
                 except:
                     try:
-                        # print("in except")
-                        req = requests.get(portfolio_url).text
+                        req = session.get(portfolio_url).text
                         soup = BeautifulSoup(req, 'lxml')
                         try:
-                            morning_id = str(soup.find_all('script')[5]).split('byId:{"')[1].split('}}')[0].split(':')[0]
-                        except:
-                            morning_id = str(soup.find_all('script')[6]).split('byId:{"')[1].split('}}')[0].split(':')[0]
-                        morning_id = morning_id.replace('"', '')
-                        # print(morning_id)
-                    except:
-                        
-                        print("IN Except for finding morning_id")
-                        print(site_url)
-                        continue
+                            morning_id = str(soup.find_all('script')[5]).split(
+                                'byId:{"')[1].split('}}')[0].split(':')[0]
+                        except Exception as e:
+                            morning_id = str(soup.find_all('script')[6]).split(
+                                'byId:{"')[1].split('}}')[0].split(':')[0]
 
-            dat = "https://api-global.morningstar.com/sal-service/v1/etf/quote/realTime/{}/data?secExchangeList=&random=0.05994721785880497&clientId=MDC&benchmarkId=category&version=3.31.0".format(morning_id)
+                        morning_id = morning_id.replace('"', '')
+                    except:
+                        my_log.info("IN Except for finding morning_id")
+            my_log.info(morning_id)
+            dat = f"https://api-global.morningstar.com/sal-service/v1/etf/quote/realTime/{morning_id}/data?secExchangeList=&random=0.05994721785880497&clientId=MDC&benchmarkId=category&version=3.31.0"
             while True:
                 try:
-                    date_response = requests.request("GET", dat, headers=headers1).json()
+                    date_response = session.request("GET", dat, headers=headers1).json()
                 except Exception as e:
-                    print(e)
+                    my_log.info(e)
                     sleep(2)
-                    date_response = requests.request("GET", dat, headers=headers1).json()
+                    date_response = session.request("GET", dat, headers=headers1).json()
                 break
             site_date = date_response['asOfDateLastPriceFund'].split("T")[0] 
-            print(site_date)
+            my_log.info(site_date)
             if master__id not in main_map:
                 main_map[master__id] = {}
             TIME = "00:00:00"
@@ -107,25 +104,26 @@ def fetch_data():
             main_map[master__id]["time"] = TIME
             main_map[master__id]["date"] = site_date
             main_map[master__id]["indicators"] = {}
-            json_url = "https://api-global.morningstar.com/sal-service/v1/etf/portfolio/v2/sector/{}/data?locale=en&clientId=MDC&benchmarkId=category&version=3.31.0".format(morning_id)
+
+            json_url = "https://api-global.morningstar.com/sal-service/v1/etf/portfolio/regionalSector/{}/data?locale=en&clientId=MDC&benchmarkId=category&version=3.31.0".format(morning_id)
             while True:
                 try:
-                    response = requests.get(json_url,headers=headers1).json()
+                    response = session.get(json_url,headers=headers1).json()
                 except Exception as e:
-                    response = requests.get(json_url,headers=headers1).json()
+                    my_log.info(e)
+                    sleep(2)
+                    response = session.get(json_url,headers=headers1).json()
                 break
-            new_dict1 = funcy.omit(response['FIXEDINCOME']['fundPortfolio'], ('portfolioDate'))
-            print(new_dict1)
+            
+            new_dict = funcy.omit(response['fundPortfolio'], ('portfolioDate', 'masterPortfolioId'))
             total_list = []
-            for key,value in new_dict1.items():
-                # print({key:value})
-                dict1 = {"name":re.sub(r"(\w)([A-Z])", r"\1 \2", str(key)).title(),"Fund_%":str(value)}
-                total_list.append(dict1)
-            main_map[master__id]["indicators"]["742"] = {"value_data":0,"json_data":total_list}
+            for key,value in new_dict.items():
+                total_list.append({"name":re.sub(r"(\w)([A-Z])", r"\1 \2", str(key)).title(),"Equity_%":str(value)})
+            main_map[master__id]["indicators"]["741"] = {"value_data":0,"json_data":total_list}
         except Exception as e:
-            print(e)
-            print(source)
-    # print(json.dumps(main_map))
+            my_log.info(e)
+            my_log.info(source)
+            pass
     main_map = json.dumps(main_map)
     saveToSql(main_map)
 
@@ -139,32 +137,31 @@ def saveToSql(main_map):
             db_date = main_map[masterId]['date']
             db_time = main_map[masterId]['time']
             for indicatorId in main_map[masterId]["indicators"]:
-                db_value_data = main_map[masterId]["indicators"][indicatorId]["value_data"]
-                db_json_data = main_map[masterId]["indicators"][indicatorId]["json_data"]
-                
-                # query_data = query_data + "('"+str(db_date)+"','"+str(db_time)+"','"+str(masterId)+"','"+str(indicatorId)+"','"+str(json.dumps(db_json_data))+"',NULL),"
-                
+                db_json_data = main_map[masterId]["indicators"][indicatorId]["json_data"]               
                 query_data = query_data + "('"+str(masterId)+"','"+str(indicatorId)+"','"+str(0)+"','"+str(json.dumps(db_json_data))+"','"+str(1)+"','"+str(db_date)+"','"+str(db_time)+"','"+str(1)+"',NULL),"
-                # print(query_data)
     try:
         sql = sql_query_start + query_data[:-1] + sql_query_end
-        # print("sql:::---",sql)
         connection_pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="pynative_pool",pool_size=5,pool_reset_session=True,host='54.237.79.6',database='rentech_db',user='rentech_user',password='N)baegbgqeiheqfi3e9314jnEkekjb',connect_timeout=600000,auth_plugin='mysql_native_password')
         connection_object = connection_pool.get_connection()
         if connection_object.is_connected():
             cursor = connection_object.cursor()
             cursor.execute(sql)
+            my_log.info(f'{cursor.rowcount} rows inserted')
             connection_object.commit()
-            print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~inserted data in to db~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     except Error as e:
-        print ("Error while connecting to MySQL using Connection pool ", e)
+        my_log.info ("Error while connecting to MySQL using Connection pool ", e)
     finally:
         if(connection_object.is_connected()):
             cursor.close()
             connection_object.close()
-            print("MySQL connection is closed")
+            my_log.info("MySQL connection is closed")
 
-def scrape():
-    fetch_data()
-
-scrape()
+if __name__ == '__main__':
+    my_log.info(f'----------------------started at:{datetime.datetime.now()}----------------------------')
+    try:
+        fetch_data()
+    except Exception as e:
+        my_log.setLevel(log.ERROR)
+        my_log.error(f'Error:{e}',exc_info=True)
+    my_log.setLevel(log.INFO)
+    my_log.info(f'----------------------finished at:{datetime.datetime.now()}----------------------------')

@@ -14,7 +14,7 @@ from mysql.connector.connection import MySQLConnection
 from mysql.connector import pooling
 import logging as log
 import traceback
-log_file_path = r'D:\\sriram\\agrud\\daily_scrapers\\Daily Run\\scraper_run_log.txt'
+log_file_path = r'D:\\sriram\\agrud\\daily_scrapers\\daily_run\\moneycontrol\\scraper_run_log.txt'
 # log_file_path = '/home/ubuntu/agrud-scrapers/daily_run/moneycontrol/scraper_run_log.txt'
 log.basicConfig(filename = log_file_path,filemode='a',level=log.INFO)
 my_log = log.getLogger()
@@ -66,19 +66,20 @@ def fetch_data(master,src_list):
             #   scid = str(soup.find_all('script')[33]).split('var scid = ')[1].split('";')[0].replace('"','').replace("'"," ")
             r = requests.get(site_url+source_url).text
             soup = BeautifulSoup(r, "lxml")
-            date_site = soup.find('p', class_ = 'nseasondate').text.split(' | ')[0].replace('As on ', '')
+            # date_site = soup.find('p', class_ = 'nseasondate').text.split(' | ')[0].replace('As on ', '')
             # intdate = int(datetime.datetime.strptime(date,'%d %B, %Y').timestamp())
             # strdate = str(datetime.datetime.strptime(date,'%d %B, %Y').date())
-            strdate = datetime.datetime.strptime(date_site, '%d %b, %Y').strftime('%Y-%m-%d')
+            # strdate = datetime.datetime.strptime(date_site, '%d %b, %Y').strftime('%Y-%m-%d')
             # s_date = datetime.datetime.strptime(strdate,'%Y-%m-%d') - datetime.timedelta(days=1)
             # strdate = s_date.strftime('%Y-%m-%d')
+            strdate = '2022-03-30'
             my_log.info(strdate)
             # date = int(date.strftime('%Y-%m-%d'))
             # techperiod = str(soup.find_all('script')[33]).split('techperiod')[0].split('techPeriod =')[1].split("';")[0].replace("'","")
             # scid = str(soup.find_all('script')[33]).split('var scid = ')[1].split('";')[0].replace('"','').replace("'"," ")
-
             api_url = 'https://priceapi.moneycontrol.com/pricefeed/techindicator/D/'+split_scid+'?fields=sentiments,pivotLevels,sma,ema'
             my_log.info(api_url)
+            my_log.info('----------------------------------------------------------------')
 
             if master__id not in main_map:
                 main_map[master__id] = {}
@@ -142,9 +143,6 @@ def saveToSql(main_map):
 
                 query_data = query_data + "('"+str(masterId)+"','"+str(indicatorId)+"','"+str(
                     db_value_data)+"',NULL,'"+str(0)+"','"+str(db_date)+"','"+str(db_time)+"','"+str(4)+"',NULL),"
-
-                # query_data = query_data + "('"+str(db_date)+"','"+str(db_time)+"','"+str(
-                #     masterId)+"','"+str(indicatorId)+"',NULL,'"+str(db_value_data)+"'),"
 
     try:
         sql = sql_query_start + query_data[:-1] + sql_query_end

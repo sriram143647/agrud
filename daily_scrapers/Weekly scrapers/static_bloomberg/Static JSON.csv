@@ -1,0 +1,12 @@
+Master ID,Indicator ID,Value,Data Type,TS Date,TS Hour,Symbol
+84949,742,"[{""name"":""Digital Asset"",""Equity_%"":""100""}]",1,18-03-2022,00:00:00,ETHEREUM-X
+84949,743,"[{""name"":""Others"",""Net_Assets_%"":""100""}]",1,18-03-2022,00:00:00,ETHEREUM-X
+
+84950,742,"[{""name"":""Digital Asset"",""Equity_%"":""100""}]",1,18-03-2022,00:00:00,BITCOIN-XB
+84950,743,"[{""name"":""Others"",""Net_Assets_%"":""100""}]",1,18-03-2022,00:00:00,BITCOIN-XB
+
+86833,742,"[{""name"":""Digital Asset"",""Equity_%"":""100""}]",1,18-03-2022,00:00:00,BITCOIN-XBTE
+86833,743,"[{""name"":""Others"",""Net_Assets_%"":""100""}]",1,18-03-2022,00:00:00,BITCOIN-XBTE
+
+86831,742,"[{""name"":""Cryptocurrencies"",""Equity_%"":""100""}]",1,18-03-2022,00:00:00,BTCE
+86831,743,"[{""name"":""Others"",""Net_Assets_%"":""100""}]",1,18-03-2022,00:00:00,BTCE

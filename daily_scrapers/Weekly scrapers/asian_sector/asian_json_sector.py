@@ -150,6 +150,7 @@ def fetch_data():
     main_map = json.dumps(main_map)
     # print(main_map)
     saveToSql(main_map)
+
 def saveToSql(main_map):
     main_map = json.loads(main_map)
     

@@ -1,0 +1,22 @@
+INFO:root:----------------------started at:2022-04-11 11:17:50.222534----------------------------
+INFO:root:https://www.morningstar.com/etfs/xnse/niftybees/performance
+INFO:root:FOUSA0605Q
+INFO:root:2022-04-08
+INFO:root:https://www.morningstar.com/etfs/xnse/bankbees/performance
+INFO:root:FOUSA0605N
+INFO:root:2022-04-08
+INFO:root:https://www.morningstar.com/etfs/xnse/cpseetf/performance
+INFO:root:F00000T3ZJ
+INFO:root:2022-04-08
+INFO:root:https://www.morningstar.com/etfs/xnse/icicib22/performance
+INFO:root:0P0001IX50
+INFO:root:2022-04-08
+INFO:root:https://www.morningstar.com/etfs/xnse/juniorbees/performance
+INFO:root:FOUSA0605O
+INFO:root:2022-04-08
+INFO:root:https://www.morningstar.com/etfs/xhkg/3072/performance
+INFO:root:0P0001IMNI
+INFO:root:2022-04-08
+INFO:root:6 rows inserted
+INFO:root:MySQL connection is closed
+INFO:root:----------------------finished at:2022-04-11 11:18:17.831835----------------------------
