@@ -9,9 +9,7 @@ import fundinfo.fundinfo_professional_investor_scraper as prof_fundinfo
 import sg_morningstar.sg_morningstar_scraper as morningstar
 import pandas as pd
 import smtplib,ssl
-import time
 import os
-import csv
 import logging as log
 # file_path = '/home/ubuntu/rentech/nav_scraping/'
 file_path = r'D:\\sriram\\agrud\\NAV_scraping\\server_files\\'
@@ -70,6 +68,11 @@ def db_insert(df):
             db_conn.close()
             my_log.info('Connection closed')
 
+def vars_func(scraper_var):
+    scraper_var.output_file = output_file
+    scraper_var.data_file = data_file
+    scraper_var.non_scraped_isin_file = non_scraped_isin_file
+
 def retry(func,retries=1):
     def retry_wrapper(*args,**kwargs):
         attempt = 0
@@ -80,16 +83,13 @@ def retry(func,retries=1):
             except:
                 my_log.info('Exception occured')
                 attempt += 1
-                pass
     return retry_wrapper
 
 @retry
 def market_ft_func():
     # market_ft scraper
     my_log.info(f'{datetime.now()} market_ft scraping started')
-    market.output_file = output_file
-    market.data_file = data_file
-    market.non_scraped_isin_file = non_scraped_isin_file
+    vars_func(market)
     market.start_markets_ft_scraper()
     my_log.info(f'{datetime.now()} market_ft scraping ended')
 
@@ -97,9 +97,7 @@ def market_ft_func():
 def fundsquare_func():
     # fundsquare scraper
     my_log.info(f'{datetime.now()} fundsquare scraping started')
-    fundsquare.output_file = output_file
-    fundsquare.data_file = data_file
-    fundsquare.non_scraped_isin_file = non_scraped_isin_file
+    vars_func(fundsquare)
     fundsquare.start_fundsquare_scraper()
     my_log.info(f'{datetime.now()} fundsquare scraping ended')
 
@@ -107,9 +105,7 @@ def fundsquare_func():
 def priv_fundinfo_func():
     # priv_fundinfo scraper
     my_log.info(f'{datetime.now()} fundinfo private scraping started')
-    priv_fundinfo.output_file = output_file
-    priv_fundinfo.data_file = data_file
-    priv_fundinfo.non_scraped_isin_file = non_scraped_isin_file
+    vars_func(priv_fundinfo)
     priv_fundinfo.start_fundinfo_priv_scraper(case=1)
     my_log.info(f'{datetime.now()} fundinfo private scraping ended')
 
@@ -117,9 +113,7 @@ def priv_fundinfo_func():
 def prof_fundinfo_func():
     # prof_fundinfo scraper
     my_log.info(f'{datetime.now()} fundinfo professional scraping started')
-    prof_fundinfo.output_file = output_file
-    prof_fundinfo.data_file = data_file
-    prof_fundinfo.non_scraped_isin_file = non_scraped_isin_file
+    vars_func(prof_fundinfo)
     prof_fundinfo.start_fundinfo_prof_scraper(case=1)
     my_log.info(f'{datetime.now()} fundinfo professional scraping ended')
 
@@ -127,9 +121,7 @@ def prof_fundinfo_func():
 def morningstar_func():
     # morningstar scraper
     my_log.info(f'{datetime.now()} morningstar scraping started')
-    morningstar.output_file = output_file
-    morningstar.data_file = data_file
-    morningstar.non_scraped_isin_file = non_scraped_isin_file
+    vars_func(morningstar)
     morningstar.start_sg_morningstar_scraper()
     my_log.info(f'{datetime.now()} morningstar scraping ended')
 
@@ -142,20 +134,24 @@ def non_scraped_isin():
 def start():
     my_log.info(f'-------------------start time: {datetime.now()}-------------------')
     # files deletion
-    try:
+    if os.path.exists(output_file):
         os.remove(output_file)
-    except:
+    else:
         pass
     
-    try:
+    if os.path.exists(non_scraped_isin_file):
         os.remove(non_scraped_isin_file)
-    except:
+    else:
         pass
     
     try:
-        os.remove(log_file)
+        if os.path.exists(log_file):
+                os.remove(log_file)
+        else:
+            pass
     except:
         pass
+
     
     # scraper tasks
     my_log.info('task started')

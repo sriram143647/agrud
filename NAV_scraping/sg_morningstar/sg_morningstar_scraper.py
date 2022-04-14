@@ -1,17 +1,12 @@
-from doctest import master
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium import webdriver
 from bs4 import BeautifulSoup
 from datetime import datetime,timedelta
 import csv
 import json
 import pandas as pd
-import numpy as np
 import os
 import requests
-import pymysql
 import concurrent.futures
+import common_utility as cu
 session = requests.session()
 domain = os.getcwd().split('\\')[-1].replace(' ','_')
 output_file = f"{domain}_data.csv"
@@ -20,27 +15,6 @@ for file in os.listdir():
         data_file = os.getcwd()+'\\'+file
         break
 non_scraped_isin_file = f"{domain}_non_scraped_data.csv"  
-
-def get_driver():
-    s=Service(ChromeDriverManager().install())
-    options = webdriver.ChromeOptions()
-    options.add_experimental_option('excludeSwitches', ['enable-logging'])
-    options.add_argument("--disable-logging")
-    # options.add_argument("--incognito")
-    options.add_argument('--headless')
-    driver = webdriver.Chrome(service=s,options=options)
-    return driver
-
-def getCookie(url):
-    driver = get_driver()
-    driver.get(url)
-    cookies_list = driver.get_cookies()
-    cookies_json = {}
-    for cookie in cookies_list:
-        cookies_json[cookie['name']] = cookie['value']
-    cookies_string = str(cookies_json).replace("{", "").replace("}", "").replace("'", "").replace(": ", "=").replace(",", ";")
-    driver.quit()
-    return cookies_string
 
 def get_auth_token(header,pi_token):
     url = f'https://sg.morningstar.com/sg/report/fund/performance.aspx?t={pi_token}'
@@ -60,7 +34,7 @@ def get_headers():
     isin = 'SGXZ83598466' 
     header = {
         'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-        'cookie': getCookie('https://sg.morningstar.com/sg/'),
+        'cookie': cu.getCookie('https://sg.morningstar.com/sg/'),
         'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36'
     }
     now = datetime.now()
@@ -84,49 +58,6 @@ def get_headers():
     }
     return header,api_header
 
-def db_insert(df):
-    result = df[['master id','price','date']].values.tolist()
-    try:
-        db_conn = pymysql.connect(host='54.237.79.6',user='rentech_user',database = 'rentech_db',password='N)baegbgqeiheqfi3e9314jnEkekjb')
-        cursor = db_conn.cursor()
-        sql = "INSERT IGNORE INTO `raw_data_test` VALUES (NULL, %s, 371, %s, NULL, 2, %s, '0:0:0', 12, NULL, CURRENT_TIMESTAMP());"
-        cursor.executemany(sql, result)
-        rows = cursor.rowcount
-        print(f'{rows} rows inserted')
-        db_conn.commit()
-    except Exception as e:
-        print(f'Exception: {e}')
-    finally:
-        if db_conn.open:
-            cursor.close()
-            db_conn.close()
-            print('Connection closed')
-
-def write_header():
-    with open(output_file,"a",newline="") as file:
-        writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
-        writer.writerow(['master id','isin name','price','date'])
-
-def csv_filter():
-    filtered_df = pd.DataFrame()
-    unique_isin = []
-    cols = ['master id','isin name','price','date']
-    try:
-        df = pd.read_csv(output_file,encoding='utf-8')
-    except FileNotFoundError:
-        write_header()
-        return 0
-    for isin,grouped_df in df.groupby(by=['isin name']):
-        for i,row in grouped_df.iterrows():
-            if row[2] is not np.nan and row[3] is not np.nan:
-                if isin not in unique_isin:
-                    unique_isin.append(isin)
-                    filtered_df = filtered_df.append(pd.DataFrame([row],columns=cols),ignore_index=True)
-    try:
-        filtered_df.to_csv(output_file,encoding='utf-8',columns=cols,index=False)
-        return filtered_df
-    except:
-        pass
 
 def morningstar_gen_case(api_header,lst):
     nav_price = ''
@@ -157,14 +88,11 @@ def morningstar_gen_case(api_header,lst):
             writer.writerow(row)
         return 0
     else:
-        # f = open(non_scraped_isin_file, 'a')
-        # f.write(f'{isin}\n')
-        # f.close()
         return 0
 
 def start_sg_morningstar_scraper():
     data_lst = []
-    csv_filter()
+    cu.csv_filter(output_file)
     downloaded_isin = pd.read_csv(output_file)['isin name'].values.tolist()
     header,api_header = get_headers()
     df = pd.read_csv(data_file,encoding="utf-8")
@@ -190,8 +118,8 @@ def start_sg_morningstar_scraper():
         data_lst.append(lst)
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as link_executor:
         [link_executor.submit(morningstar_gen_case,api_header,lst) for lst in data_lst]
-    df = csv_filter()
-    # db_insert(df)
+    df = cu.csv_filter(output_file)
+    # cu.db_insert(df)
 
 
 if __name__ == '__main__':
