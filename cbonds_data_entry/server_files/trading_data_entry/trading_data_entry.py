@@ -8,13 +8,22 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import smtplib,ssl
 import logging as log
-# server file paths
-publish_date = datetime.datetime.today().strftime('%Y-%m-%d')
-# publish_date = '2022-01-08'
-data_files_path = '/home/ubuntu/rentech/cbonds_scrapers/zipfiles/datafiles/'+publish_date+'/'
-master_id_file = '/home/ubuntu/rentech/cbonds_scrapers/trading_data_entry/daily_missing_isin_to_masterid_map.json'
-col_indicator_file = '/home/ubuntu/rentech/cbonds_scrapers/trading_data_entry/col_to_indicator.json'
-log_file_path = '/home/ubuntu/rentech/cbonds_scrapers/trading_data_entry/scraper_run_log.txt'
+# dates
+today_date = datetime.datetime.today().strftime('%Y-%m-%d')
+publish_date = (datetime.datetime.strptime(today_date, '%Y-%m-%d').date() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+# today_date = '2022-04-19'
+# publish_date = '2022-04-18'
+
+
+# file paths
+# data_files_path = '/home/ubuntu/rentech/cbonds_scrapers/zipfiles/datafiles/'+today_date+'/'
+data_files_path = r'D:\\sriram\\agrud\\cbonds_data_entry\\server_files\\zipfiles\\data_files\\'+today_date+'\\'
+# path = '/home/ubuntu/rentech/cbonds_scrapers/trading_data_entry/'
+path = r'D:\\sriram\\agrud\\cbonds_data_entry\\server_files\\trading_data_entry\\'
+master_id_file = path+'daily_missing_isin_to_masterid_map.json'
+col_indicator_file = path+'col_to_indicator.json'
+log_file_path = path+'scraper_run_log.txt'
+
 log.basicConfig(filename = log_file_path,filemode='a',level=log.INFO)
 my_log = log.getLogger()
 
@@ -30,7 +39,7 @@ def send_email(row_count=0,status=None,err_text=None):
     sender_email = 'agrud.scrapersmail123@gmail.com'
     email_password = 'qwerty@123'
     receivers_email_list = ["prince.chaturvedi@agrud.com","sayan.sinharoy@agrud.com","soumodip.pramanik@agrud.com","vidyut.lakhotia@agrud.com","bhavesh.bansal@agrud.com"]
-    subject = f"Nav Scraping data ingestion: {datetime.today().strftime('%Y-%m-%d %H:%M:%S')}"
+    subject = f"Nav Scraping data ingestion: {datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')}"
     msg = MIMEMultipart()
     msg['From'] = sender_email
     msg['To'] = ','.join(receivers_email_list)
@@ -47,8 +56,7 @@ def send_email(row_count=0,status=None,err_text=None):
     my_log.info(f'email sent')
 
 def get_result():
-    global publish_date
-    publish_date = (datetime.datetime.strptime(publish_date, '%Y-%m-%d').date() + datetime.timedelta(days=-1)).strftime("%Y-%m-%d")
+    global today_date,publish_date
     try:
         df = pd.read_excel(data_files_path+'tradings.xls')
     except:
@@ -144,6 +152,6 @@ if __name__ == "__main__":
   except Exception as e:
     my_log.setLevel(log.ERROR)
     my_log.error(f'Error:{e}',exc_info=True)
-    send_email(status='Fail',text=str(e))
+    send_email(status='Fail',err_text=str(e))
   my_log.setLevel(log.INFO)
   my_log.info(f'----------------------finished at:{datetime.datetime.now()}----------------------------')

@@ -1,0 +1,15 @@
+INFO:root:----------------------started at:2022-01-11 15:56:53.057677----------------------------
+INFO:root:result set is created
+INFO:root:266 rows inserted successfully
+INFO:root:MySQL connection is closed
+INFO:root:----------------------finished at:2022-01-11 15:57:07.588693----------------------------
+INFO:root:----------------------started at:2022-01-11 16:30:55.371905----------------------------
+INFO:root:result set is created
+INFO:root:0 rows inserted successfully
+INFO:root:MySQL connection is closed
+INFO:root:----------------------finished at:2022-01-11 16:31:09.704724----------------------------
+INFO:root:----------------------started at:2022-01-11 16:33:57.586646----------------------------
+INFO:root:result set is created
+INFO:root:468 rows inserted successfully
+INFO:root:MySQL connection is closed
+INFO:root:----------------------finished at:2022-01-11 16:34:05.781664----------------------------

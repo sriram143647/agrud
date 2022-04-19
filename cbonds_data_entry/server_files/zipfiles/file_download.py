@@ -9,12 +9,12 @@ import datetime
 import os
 import logging as log
 # server paths
-data_folder_path = '/home/ubuntu/rentech/cbonds_scrapers/zipfiles/datafiles/'
-log_file_path = '/home/ubuntu/rentech/cbonds_scrapers/zipfiles/scraper_run_log.txt'
+# data_folder_path = '/home/ubuntu/rentech/cbonds_scrapers/zipfiles/datafiles/'
+# log_file_path = '/home/ubuntu/rentech/cbonds_scrapers/zipfiles/scraper_run_log.txt'
 
 #local paths
-# data_folder_path = 'D:\\sriram\\agrud\\cbonds_data_entry\\server_files\\zipfiles\\data_files\\'
-# log_file_path = 'D:\\sriram\\agrud\\cbonds_data_entry\\server_files\\zipfiles\\scraper_run_log.txt'
+data_folder_path = 'D:\\sriram\\agrud\\cbonds_data_entry\\server_files\\zipfiles\\data_files\\'
+log_file_path = 'D:\\sriram\\agrud\\cbonds_data_entry\\server_files\\zipfiles\\scraper_run_log.txt'
 log.basicConfig(filename=log_file_path,filemode='a',level=log.INFO)
 my_log = log.getLogger()
 
@@ -57,13 +57,13 @@ def get_data(today_date):
 if __name__ == "__main__":
   my_log.info(f'----------------------started at:{datetime.datetime.now()}----------------------------')
   try:
-    today_date = datetime.datetime.today().strftime('%Y-%m-%d')
-    # today_date = '2022-01-08'
+    # today_date = datetime.datetime.today().strftime('%Y-%m-%d')
+    today_date = '2022-04-19'
     get_data(today_date)
-    send_email(status='Success')
+    # send_email(status='Success')
   except Exception as e:
     my_log.setLevel(log.ERROR)
     my_log.error(f'Error:{e}',exc_info=True)
-    send_email(status='Fail',text=str(e))
+    send_email(status='Fail',err_text=str(e))
   my_log.setLevel(log.INFO)
   my_log.info(f'----------------------finished at:{datetime.datetime.now()}----------------------------')

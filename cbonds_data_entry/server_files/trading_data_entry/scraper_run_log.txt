@@ -1,0 +1,40 @@
+INFO:root:----------------------started at:2022-03-03 17:57:47.683104----------------------------
+INFO:root:resultset is created
+INFO:root:0 records inserted successfully
+INFO:root:MySQL connection is closed
+INFO:root:----------------------finished at:2022-03-03 17:57:55.593154----------------------------
+INFO:root:----------------------started at:2022-03-03 18:01:08.047248----------------------------
+INFO:root:resultset is created
+INFO:root:0 records inserted successfully
+INFO:root:MySQL connection is closed
+INFO:root:----------------------finished at:2022-03-03 18:01:13.080246----------------------------
+INFO:root:----------------------started at:2022-04-19 14:20:11.133396----------------------------
+INFO:root:resultset is created
+INFO:root:0 records inserted successfully
+INFO:root:MySQL connection is closed
+ERROR:root:Error:module 'datetime' has no attribute 'today'
+Traceback (most recent call last):
+  File "d:\sriram\agrud\cbonds_data_entry\server_files\trading_data_entry\trading_data_entry.py", line 151, in <module>
+    db_insert(result)
+  File "d:\sriram\agrud\cbonds_data_entry\server_files\trading_data_entry\trading_data_entry.py", line 145, in db_insert
+    send_email(rows,status = 'Success')
+  File "d:\sriram\agrud\cbonds_data_entry\server_files\trading_data_entry\trading_data_entry.py", line 42, in send_email
+    subject = f"Nav Scraping data ingestion: {datetime.today().strftime('%Y-%m-%d %H:%M:%S')}"
+AttributeError: module 'datetime' has no attribute 'today'
+INFO:root:----------------------started at:2022-04-19 14:20:43.261545----------------------------
+INFO:root:resultset is created
+INFO:root:0 records inserted successfully
+INFO:root:MySQL connection is closed
+ERROR:root:Error:module 'datetime' has no attribute 'today'
+Traceback (most recent call last):
+  File "d:\sriram\agrud\cbonds_data_entry\server_files\trading_data_entry\trading_data_entry.py", line 151, in <module>
+    db_insert(result)
+  File "d:\sriram\agrud\cbonds_data_entry\server_files\trading_data_entry\trading_data_entry.py", line 145, in db_insert
+    send_email(rows,status = 'Success')
+  File "d:\sriram\agrud\cbonds_data_entry\server_files\trading_data_entry\trading_data_entry.py", line 42, in send_email
+    subject = f"Nav Scraping data ingestion: {datetime.today().strftime('%Y-%m-%d %H:%M:%S')}"
+AttributeError: module 'datetime' has no attribute 'today'
+INFO:root:----------------------started at:2022-04-19 14:21:20.787595----------------------------
+INFO:root:resultset is created
+INFO:root:0 records inserted successfully
+INFO:root:MySQL connection is closed

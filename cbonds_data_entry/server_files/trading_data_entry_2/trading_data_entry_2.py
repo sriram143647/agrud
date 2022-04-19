@@ -8,25 +8,26 @@ import datetime
 import pytz
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
 import smtplib,ssl
 import smtplib
 import logging as log
-# server file paths
+# dates
 today_date = datetime.datetime.today().strftime('%Y-%m-%d')
 publish_date = (datetime.datetime.strptime(today_date, '%Y-%m-%d').date() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-# publish_date = '2022-02-03'
+# today_date = '2022-04-19'
+# publish_date = '2022-04-18'
 
-# server files
+
+# file paths
 data_files_path = '/home/ubuntu/rentech/cbonds_scrapers/zipfiles/datafiles/'+today_date+'/'
-master_id_file = '/home/ubuntu/rentech/cbonds_scrapers/trading_data_entry_2/Isin_to_masterid.json'
-col_indicator_file = '/home/ubuntu/rentech/cbonds_scrapers/trading_data_entry_2/col_to_indicator.json'
-log_file_path = '/home/ubuntu/rentech/cbonds_scrapers/trading_data_entry_2/scraper_run_log.txt'
-
-# local files
 # data_files_path = r'D:\\sriram\\agrud\\cbonds_data_entry\\server_files\\zipfiles\\data_files\\'+today_date+'\\'
-# master_id_file = r'D:\\sriram\\agrud\\cbonds_data_entry\\server_files\\trading_data_entry_2\\Isin_to_masterid.json'
-# col_indicator_file = r'D:\\sriram\\agrud\\cbonds_data_entry\\server_files\\trading_data_entry_2\\col_to_indicator.json'
-# log_file_path = r'D:\\sriram\\agrud\\cbonds_data_entry\\server_files\\trading_data_entry_2\\scraper_run_log.txt'
+path = '/home/ubuntu/rentech/cbonds_scrapers/trading_data_entry_2/'
+# path = r'D:\\sriram\\agrud\\cbonds_data_entry\\server_files\\trading_data_entry_2\\'
+master_id_file = path+'Isin_to_masterid.json'
+col_indicator_file = path+'col_to_indicator.json'
+log_file_path = path+'scraper_run_log.txt'
+
 log.basicConfig(filename = log_file_path,filemode='a',level=log.INFO)
 my_log = log.getLogger()
 
@@ -43,13 +44,16 @@ def send_email(row_count=0,status=None,err_text=None):
     sender_email = 'agrud.scrapersmail123@gmail.com'
     email_password = 'qwerty@123'
     receivers_email_list = ["prince.chaturvedi@agrud.com","sayan.sinharoy@agrud.com","soumodip.pramanik@agrud.com","vidyut.lakhotia@agrud.com","bhavesh.bansal@agrud.com"]
-    subject = f"Trading data entry part2 ingestion: {datetime.today().strftime('%Y-%m-%d %H:%M:%S')}"
+    subject = f"Trading data entry part2 ingestion: {datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')}"
     msg = MIMEMultipart()
     msg['From'] = sender_email
     msg['To'] = ','.join(receivers_email_list)
     msg['Subject'] = subject
     body = f"Total records inserted: {row_count}\ncronjob status: {status}\nError:{err_text}"
     msg.attach(MIMEText(body,'plain'))
+    attach_file_name = path+csv_file
+    with open(attach_file_name,'rb') as send_file:
+        msg.attach(MIMEApplication(send_file.read(), Name=f'{publish_date}_missing_isin.csv'))
     text = msg.as_string()
     context = ssl.create_default_context()
     server = smtplib.SMTP('smtp.gmail.com',587)
@@ -81,7 +85,7 @@ def get_result():
             missing_isin.append(k)
     csv_file = f'{publish_date}_missing_isin.csv'
     my_log.info(f'{len(missing_isin)} isin are missings')
-    with open(csv_file, mode='a',encoding="utf-8",newline="") as missing_file:
+    with open(path+csv_file, mode='a',encoding="utf-8",newline="") as missing_file:
         writer = csv.writer(missing_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
         for i in missing_isin:
             writer.writerow([i])
@@ -167,7 +171,7 @@ if __name__ == "__main__":
   try:
     result,csv_file = get_result()
     db_insert(result)
-    os.remove(csv_file)
+    os.remove(path+csv_file)
     my_log.info('csv deleted successfully')
   except Exception as e:
     my_log.setLevel(log.ERROR)
