@@ -4,13 +4,14 @@ from selenium import webdriver
 import pandas as pd
 import numpy as np
 import csv
+import os
+os.environ['WDM_LOG_LEVEL'] = '50'
 
 
 def get_driver():
     options = webdriver.ChromeOptions()
     options.add_experimental_option('excludeSwitches',['enable-logging'])
-    # options.add_argument("--incognito")
-    options.add_argument('--headless')
+    options.add_argument("--headless")
     driver = webdriver.Chrome(ChromeDriverManager().install(),options=options)
     return driver
 

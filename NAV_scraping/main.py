@@ -71,7 +71,7 @@ def db_insert(df):
 def vars_func(scraper_var):
     scraper_var.output_file = output_file
     scraper_var.data_file = data_file
-    scraper_var.non_scraped_isin_file = non_scraped_isin_file
+    # scraper_var.non_scraped_isin_file = non_scraped_isin_file
 
 def retry(func,retries=1):
     def retry_wrapper(*args,**kwargs):
@@ -106,7 +106,7 @@ def priv_fundinfo_func():
     # priv_fundinfo scraper
     my_log.info(f'{datetime.now()} fundinfo private scraping started')
     vars_func(priv_fundinfo)
-    priv_fundinfo.start_fundinfo_priv_scraper(case=1)
+    priv_fundinfo.start_fundinfo_priv_scraper()
     my_log.info(f'{datetime.now()} fundinfo private scraping ended')
 
 @retry
@@ -114,7 +114,7 @@ def prof_fundinfo_func():
     # prof_fundinfo scraper
     my_log.info(f'{datetime.now()} fundinfo professional scraping started')
     vars_func(prof_fundinfo)
-    prof_fundinfo.start_fundinfo_prof_scraper(case=1)
+    prof_fundinfo.start_fundinfo_prof_scraper()
     my_log.info(f'{datetime.now()} fundinfo professional scraping ended')
 
 @retry
@@ -143,16 +143,7 @@ def start():
         os.remove(non_scraped_isin_file)
     else:
         pass
-    
-    try:
-        if os.path.exists(log_file):
-                os.remove(log_file)
-        else:
-            pass
-    except:
-        pass
 
-    
     # scraper tasks
     my_log.info('task started')
     market_ft_func()
@@ -164,8 +155,8 @@ def start():
     my_log.info('task ended')
 
     # db insertion
-    df = pd.read_csv(output_file,encoding='utf-8')
-    db_insert(df)
+    # df = pd.read_csv(output_file,encoding='utf-8')
+    # db_insert(df)
     my_log.info(f'-------------------end time: {datetime.now()}-------------------')
 
 if __name__ == '__main__':

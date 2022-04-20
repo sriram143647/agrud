@@ -48,7 +48,7 @@ def prof_investor_scraper(header,lst):
     else:
         return 0
 
-def start_fundinfo_prof_scraper(case):
+def start_fundinfo_prof_scraper():
     data_lst = []
     cu.csv_filter(output_file)
     downloaded_isin = pd.read_csv(output_file)['isin name'].values.tolist()
@@ -56,27 +56,15 @@ def start_fundinfo_prof_scraper(case):
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['Master ID'])
     df = df[~df['Symbol'].isin(downloaded_isin)]
-    if case == 1:
-        for i,row in df.iterrows():
-            isin = row[0]
-            master_id = row[2]
-            for country in ['LU','SG','HK','CH','GB','IE','DE','SE']:
-                url = f'https://fundinfo.com/en/{country}-prof/LandingPage/Data?skip=0&query={isin}&orderdirection='
-                lst = [isin,master_id,url]
-                data_lst.append(lst)
-        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as link_executor:
-            [link_executor.submit(prof_investor_scraper,header,lst) for lst in data_lst]
-    if case == 2:
-        df = df[df['Symbol'].str.contains('SG')]
-        for i,row in df.iterrows():
-            isin = row[0]
-            master_id = row[2]
-            for country in ['LU','SG','HK','CH','GB','IE','DE','SE']:
-                url = f'https://fundinfo.com/en/{country}-prof/LandingPage/Data?skip=0&query={isin}&orderdirection='
-                lst = [isin,master_id,url]
-                data_lst.append(lst)
-        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as link_executor:
-            [link_executor.submit(prof_investor_scraper,header,lst) for lst in data_lst]
+    for i,row in df.iterrows():
+        isin = row[0]
+        master_id = row[2]
+        for country in ['LU','SG','HK','CH','GB','IE','DE','SE']:
+            url = f'https://fundinfo.com/en/{country}-prof/LandingPage/Data?skip=0&query={isin}&orderdirection='
+            lst = [isin,master_id,url]
+            data_lst.append(lst)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as link_executor:
+        [link_executor.submit(prof_investor_scraper,header,lst) for lst in data_lst]
     df = cu.csv_filter(output_file)
     # cu.db_insert(df)
             
