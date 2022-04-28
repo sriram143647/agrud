@@ -1,6 +1,4 @@
-from asyncio import futures
 from datetime import datetime
-from doctest import master
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -55,7 +53,8 @@ def csv_filter():
             if row[2] is not np.nan and row[3] is not np.nan:
                 if isin not in unique_isin:
                     unique_isin.append(isin)
-                    filtered_df = filtered_df.append(pd.DataFrame([row],columns=cols),ignore_index=True)
+                    temp_df = pd.DataFrame([row],columns=cols)
+                    filtered_df = pd.concat([filtered_df,temp_df])
     try:
         filtered_df.to_csv(output_file,columns=cols,index=False)
     except:

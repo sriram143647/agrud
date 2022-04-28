@@ -7,6 +7,7 @@ import numpy as np
 from bs4 import BeautifulSoup
 import os
 import requests
+import concurrent.futures
 session = requests.session()
 domain = os.getcwd().split('\\')[-1].replace(' ','_')
 output_file = f'{domain}_data_links.csv'
@@ -50,13 +51,12 @@ def get_header():
     }
     return header
 
-def get_data():
-    pass
-
-def moneycontroller_gen_case(header,isin,master_id):
+def moneycontroller_gen_case(header,lst):
     factsheet_link = ''
     prospectus_link = ''
-    url = f'https://www.moneycontroller.co.uk/return-performance-funds-etfs?search={isin}'
+    isin = lst[0]
+    master_id = lst[1]
+    url = lst[2]
     res = session.get(url,headers=header)
     soup = BeautifulSoup(res.text,'html5lib')
     try:
@@ -72,18 +72,13 @@ def moneycontroller_gen_case(header,isin,master_id):
         if 'fact sheet' in link.find('a').text.lower():
             if factsheet_link == '':
                factsheet_link = link.find('a').get('href')
-               print('factsheet link is found')
         if 'prospectus' == link.find('a').text.lower():
                 if prospectus_link == '':
                     prospectus_link = link.find('a').get('href')
-                    print('prospectus link is found')
         if factsheet_link != '' and prospectus_link != '':
             row = [master_id,isin,factsheet_link,prospectus_link]
             write_output(row)
             return 0
-    row = [master_id,isin,factsheet_link,prospectus_link]
-    write_output(row)
-    return 0
 
 def csv_filter():
     filtered_df = pd.DataFrame()
@@ -99,24 +94,17 @@ def csv_filter():
             if row[2] is not np.nan and row[3] is not np.nan:
                 if isin not in unique_isin:
                     unique_isin.append(isin)
-                    filtered_df = filtered_df.append(pd.DataFrame([row],columns=cols),ignore_index=True)
+                    temp_df = pd.DataFrame([row],columns=cols)
+                    filtered_df = pd.concat([filtered_df,temp_df])
     try:
         filtered_df.to_csv(output_file,columns=cols,index=False)
     except:
         pass
 
-def isin_downloaded():
-    isin_downloaded = []
-    with open(output_file,"r") as file:
-        csvreader = csv.reader(file)
-        header = next(csvreader)
-        for row in csvreader:
-            isin_downloaded.append(row[1])
-    return isin_downloaded
-
 def start_moneycontroller_scraper():
+    data_lst = []
     csv_filter()
-    downloaded_isin = isin_downloaded()
+    downloaded_isin = pd.read_csv(output_file)['isin name'].values.tolist()
     header = get_header()
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['master_id'])
@@ -124,7 +112,11 @@ def start_moneycontroller_scraper():
     for i,row in df.iterrows():
         isin = row[3]
         master_id = row[0]
-        moneycontroller_gen_case(header,isin,master_id)
+        url = f'https://www.moneycontroller.co.uk/return-performance-funds-etfs?search={isin}'
+        lst = [isin,master_id,url]
+        data_lst.append(lst)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as link_executor:
+        [link_executor.submit(moneycontroller_gen_case,header,lst) for lst in data_lst]
     csv_filter()
 
 if __name__ == '__main__':

@@ -4,6 +4,7 @@ import requests
 import pandas as pd
 from datetime import datetime
 import os
+import base64
 import threading
 import time
 
@@ -43,8 +44,10 @@ def file_download(file_path,link,master_id,i):
         print(str(i)+' '+str(master_id)+' file already exists')
         return 0
     res = requests.get(link,verify=False,stream=True,headers=header)
-    with open(file_path, 'wb') as f:
+    with open(file_path, mode='wb') as f:
         f.write(res.content)
+    # with open(file_path, "wb") as pdf_file:
+    #     base64.b64encode(pdf_file.write(res.content))
     if '\\factsheet\\' in file_path:
         print(f"------------{master_id} factsheet downloaded----------------")
     else:
@@ -64,7 +67,7 @@ def get_files():
             # file_download(file_path,link,master_id,i)
             download_thread = threading.Thread(target=file_download, args=(file_path,link,master_id,i))
             download_thread.start()
-        except:
+        except Exception as e:
             pass
 
         # # pros link pdf download
@@ -75,7 +78,7 @@ def get_files():
         #     download_thread.start()
         # except:
         #     pass
-        time.sleep(0.1)
+        time.sleep(0.5)
 
 if __name__ == '__main__':
     get_files()
