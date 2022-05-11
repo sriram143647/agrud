@@ -1,10 +1,8 @@
-from base64 import encode
 from datetime import datetime
 import requests
 import pandas as pd
 from datetime import datetime
 import os
-import base64
 import threading
 import time
 
@@ -46,8 +44,6 @@ def file_download(file_path,link,master_id,i):
     res = requests.get(link,verify=False,stream=True,headers=header)
     with open(file_path, mode='wb') as f:
         f.write(res.content)
-    # with open(file_path, "wb") as pdf_file:
-    #     base64.b64encode(pdf_file.write(res.content))
     if '\\factsheet\\' in file_path:
         print(f"------------{master_id} factsheet downloaded----------------")
     else:
