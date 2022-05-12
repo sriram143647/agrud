@@ -95,20 +95,11 @@ def fundsingapore_gen_case(header,sec_id,isin,master_id):
     write_output(row)
     return 0
 
-def isin_downloaded():
-    isin_downloaded = []
-    with open(output_file,"r") as file:
-        csvreader = csv.reader(file)
-        header = next(csvreader)
-        for row in csvreader:
-            isin_downloaded.append(row[1])
-    return isin_downloaded
-
 def start_fundsingapore_scraper():
     csv_filter()
-    downloaded_isin = isin_downloaded()
-    header = get_header()
+    downloaded_isin = pd.read_csv(output_file)['isin name'].values.tolist()
     url ='https://fundsingapore.com/fund-library'
+    header = get_header()
     res = requests.get(url,headers=header)
     soup = BeautifulSoup(res.text,'html5lib')
     data = soup.find('script',{'type':'application/json'}).string

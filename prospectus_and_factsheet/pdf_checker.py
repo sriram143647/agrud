@@ -9,6 +9,8 @@ pdf_files = r'D:\\sriram\\agrud\\prospectus_and_factsheet\\factsheet\\'
 
 
 def approach5(file,isin):
+    not_fnd_isin = []
+    fnd_isin = []
     flag = 0
     # load document
     try:
@@ -29,12 +31,11 @@ def approach5(file,isin):
             break
     file = file.split('\\')[-1].replace('.pdf','')
     if flag == 1:
+        fnd_isin.append(isin)
         res = f'file: {file} isin:{isin} found on page: {page.number+1}'
     else:
-        res = f'file: {file} isin {isin} not found'
-    with open('data.csv', mode='a', encoding='utf-8',newline="") as output_file:
-        writer = csv.writer(output_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
-        writer.writerow([res])
+        not_fnd_isin.append(isin)
+        res = f'file: {file} isin:{isin} not found'
 
 def start_check():
     date2 = '20220428'

@@ -105,10 +105,12 @@ def start_moneycontroller_scraper():
     data_lst = []
     csv_filter()
     downloaded_isin = pd.read_csv(output_file)['isin name'].values.tolist()
-    header = get_header()
     df = pd.read_csv(data_file,encoding="utf-8")
     df = df.drop_duplicates(subset=['master_id'])
     df = df[~df['symbol'].isin(downloaded_isin)]
+    if len(df) == 0:
+        return 0
+    header = get_header()
     for i,row in df.iterrows():
         isin = row[3]
         master_id = row[0]

@@ -5,7 +5,7 @@ import morningstar.morningstar_scraper as morningstar
 import moneycontroller.moneycontroller_scraper as moneycontroller
 import fundsingapore.fundsingapore_scraper as fundsingapore
 file_path = r'D:\\sriram\\agrud\\prospectus_and_factsheet\\'
-data_file = file_path+'Global _MF_Factsheet_Prospectus - FINAL GLOBAL MF LIST.csv'
+data_file = file_path+'Global_MF_Factsheet_Prospectus - FINAL GLOBAL MF LIST.csv'
 output_file = file_path+'scraped_data_links.csv'
 
 def morningstar_func():
